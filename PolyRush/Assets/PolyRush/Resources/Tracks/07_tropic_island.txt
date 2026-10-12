@@ -1,0 +1,38 @@
+name: Tropic Island
+theme: tropic
+difficulty: 4
+S 70
+R 90 40 b=10
+S 40
+L 160 35 b=12
+BOOST 16
+S 70
+CP
+R 360 42 12 b=10
+S 40
+BOOST 18
+S 60
+KICK 10 0.4
+GAP 24 -0.4
+LAND 50 6
+OUTRUN 50 6
+CP
+S 30
+L 120 40 b=12
+S 50
+R 70 50 b=10
+S 40
+L 70 45 b=10
+CP
+S 50
+BOOST 18
+UP 50 12
+KICK 10 0.4
+GAP 24 -0.4
+LAND 50 6
+OUTRUN 50 6
+S 30
+R 140 38 b=12
+S 50
+L 60 70
+S 120

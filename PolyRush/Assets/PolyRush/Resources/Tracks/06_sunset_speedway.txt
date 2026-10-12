@@ -1,0 +1,31 @@
+name: Sunset Speedway
+theme: sunset
+difficulty: 3
+S 100
+BOOST 20
+S 120
+R 180 80 b=16
+CP
+S 160
+BOOST 20
+S 60
+L 90 90 b=14
+UP 60 12
+S 60
+KICK 10 0.4
+GAP 24 -0.4
+LAND 50 6
+OUTRUN 50 6
+CP
+S 60
+L 90 60 b=12
+S 40
+R 180 55 b=16
+S 60
+CP
+BOOST 20
+S 140
+R 90 70 b=12
+S 60
+L 50 100
+S 130

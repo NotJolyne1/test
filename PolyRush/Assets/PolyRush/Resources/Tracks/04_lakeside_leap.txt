@@ -1,0 +1,30 @@
+name: Lakeside Leap
+theme: lake
+difficulty: 2
+S 80
+R 80 60 b=6
+S 60
+CP
+BOOST 20
+S 80
+UP 50 12
+KICK 10 0.4
+GAP 24 -0.4
+LAND 50 6
+OUTRUN 50 6
+S 40
+L 110 50 b=10
+S 60
+CP
+R 70 60 b=8
+UP 60 8
+S 70
+L 90 40 b=12
+S 40
+DOWN 60 8
+R 50 80 b=6
+CP
+BOOST 18
+S 100
+L 70 55 b=8
+S 80

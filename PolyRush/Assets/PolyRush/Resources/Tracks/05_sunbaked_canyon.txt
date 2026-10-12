@@ -1,0 +1,37 @@
+name: Sunbaked Canyon
+theme: canyon
+difficulty: 3
+S 70
+L 60 60 b=6
+UP 80 14
+S 50
+R 120 45 b=12
+S 60
+CP
+BOOST 16
+S 90
+DOWN 70 8
+L 90 40 b=12
+S 30
+R 90 40 b=12
+S 40
+DOWN 50 6
+CP
+R 60 70 b=6
+S 50
+BOOST 16
+UP 50 12
+KICK 10 0.4
+GAP 24 -0.4
+LAND 50 6
+OUTRUN 50 6
+S 30
+L 120 50 b=10
+CP
+UP 60 10
+S 40
+R 100 45 b=12
+DOWN 70 10
+S 60
+L 50 80
+S 110
