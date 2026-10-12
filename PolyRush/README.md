@@ -2,7 +2,7 @@
 
 A low-poly, time-trial track racer in the spirit of PolyTrack, built in Unity. It has 7 original summer tracks, snappy arcade physics, checkpoints, boost pads, jumps, banked turns, ghosts, medals, and a full menu flow. All the art (meshes, textures, sky, audio) is generated from code when the game starts. The project has no imported assets, so nothing is copied from another game and there are no broken asset references.
 
-> **Engine:** Unity **2022.3 LTS** (made for 2022.3.62f3) with the Built-in render pipeline.
+> **Engine:** Unity **2022.3 LTS** (made for 2022.3.62f2) with the Built-in render pipeline.
 > 2022.3 is the better choice for laptops: the editor and the player are lighter, and the Built-in pipeline runs well on integrated GPUs.
 > The project also opens in Unity 6 (6000.x). Accept the API updater prompt there, because some physics property names changed.
 
@@ -24,7 +24,7 @@ If the scene does not open by itself, use **PolyRush > Setup Project** or open `
 To build from the command line (CI):
 
 ```
-"C:\Program Files\Unity\Hub\Editor\2022.3.62f3\Editor\Unity.exe" -batchmode -quit -projectPath "path\to\PolyRush" ^
+"C:\Program Files\Unity\Hub\Editor\2022.3.62f2\Editor\Unity.exe" -batchmode -quit -projectPath "path\to\PolyRush" ^
   -executeMethod PolyRush.EditorTools.BuildScript.BuildWindows -logFile build.log
 ```
 

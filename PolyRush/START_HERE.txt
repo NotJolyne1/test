@@ -1,0 +1,13 @@
+POLYRUSH - HOW TO OPEN (Unity 2022.3.62f2)
+
+1. Right-click PolyRush.zip > Extract All > Extract.
+   You get a folder "PolyRush" that contains Assets, Packages and ProjectSettings.
+2. Open Unity Hub > Projects > Add (arrow) > "Add project from disk".
+3. Select that "PolyRush" folder (the one that has Assets inside) and click "Add Project".
+4. Click PolyRush in the list to open it. The first open takes a few minutes.
+5. The scene Assets/PolyRush/Scenes/Main.unity opens automatically.
+   (If not: double-click it in the Project window.)
+6. Press the Play button at the top. The game starts on the PolyRush title screen.
+
+Build the Windows game: menu PolyRush > Build Windows (64-bit)
+-> creates Builds/Windows/PolyRush.exe inside the project folder.

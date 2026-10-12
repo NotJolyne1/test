@@ -119,7 +119,6 @@ namespace PolyRush.EditorTools
             PlayerSettings.runInBackground = true;
             PlayerSettings.visibleInBackground = true;
             PlayerSettings.allowFullscreenSwitch = true;
-            PlayerSettings.SplashScreen.showUnityLogo = false;
         }
     }
 }
