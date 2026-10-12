@@ -1,0 +1,33 @@
+name: Sunset Boulevard
+theme: sunset
+difficulty: 3
+
+start
+forward 3
+boost
+forward 4
+right 4 bank
+forward 3
+cp
+right 4 bank
+up 2
+forward 2
+ramp
+gap 3 drop=1
+forward 6
+down 1
+right 4 bank
+forward 2
+cp
+boost
+forward 2
+loop
+forward 2
+right 3
+forward 6
+up 2
+right 3 bank up=1
+forward 3
+down 3
+forward 1
+finish

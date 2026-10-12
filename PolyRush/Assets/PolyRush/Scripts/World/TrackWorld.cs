@@ -4,48 +4,47 @@ using UnityEngine;
 
 namespace PolyRush
 {
-    /// <summary>A fully built track + environment. Destroying it frees every generated asset.</summary>
+    // One fully built track and its surroundings. Destroying it frees all generated meshes.
     public class TrackWorld : MonoBehaviour
     {
         public TrackInfo Info { get; private set; }
         public Theme Theme { get; private set; }
         public TrackPath Path { get; private set; }
-        public EnvironmentBuilder Env { get; private set; }
-        public int BuiltQuality { get; private set; }
+        public Landscape Land { get; private set; }
+        public int Quality { get; private set; }
 
-        readonly List<Object> created = new List<Object>();
+        readonly List<Object> owned = new List<Object>();
 
-        /// <summary>Builds the world over a few frames so a loading screen can animate.</summary>
+        // spread over a few frames so the loading screen keeps animating
         public static IEnumerator Build(TrackInfo info, Light sun, System.Action<TrackWorld> done)
         {
-            var go = new GameObject("World_" + info.Id);
-            var world = go.AddComponent<TrackWorld>();
-            world.Info = info;
-            world.BuiltQuality = GameSettings.Quality;
-            world.Theme = Theme.Get(info.ThemeId);
-            world.Path = TrackPath.Build(info);
+            var go = new GameObject("Track " + info.Name);
+            var w = go.AddComponent<TrackWorld>();
+            w.Info = info;
+            w.Quality = Settings.Quality;
+            w.Theme = Theme.Get(info.ThemeId);
+            w.Path = TrackPath.Build(info);
             yield return null;
 
-            Vector3 sunDir = EnvironmentBuilder.ApplyLighting(world.Theme, sun, world.created);
-            world.Env = new EnvironmentBuilder(world.Path, world.Theme, GameSettings.DetailScale, 1234 + info.Index * 97);
+            Vector3 sunDir = Landscape.ApplyLighting(w.Theme, sun, w.owned);
+            w.Land = new Landscape(w.Path, w.Theme, Settings.DetailScale, 1234 + info.Index * 97);
             yield return null;
-
-            world.Env.BuildTerrain(go.transform, world.created);
+            w.Land.BuildTerrain(go.transform, w.owned);
             yield return null;
-            world.Env.BuildWater(go.transform, world.created, sunDir);
-            TrackMeshBuilder.Build(world.Path, world.Theme, world.Env.Height, go.transform, world.created);
+            w.Land.BuildWater(go.transform, w.owned, sunDir);
+            TrackBuilder.Build(w.Path, w.Theme, w.Land.Height, go.transform, w.owned);
             yield return null;
-            world.Env.BuildScenery(go.transform, world.created);
-            world.Env.BuildClouds(go.transform, world.created);
+            w.Land.BuildScenery(go.transform, w.owned);
+            w.Land.BuildClouds(go.transform, w.owned);
             yield return null;
-            done(world);
+            done(w);
         }
 
         void OnDestroy()
         {
-            foreach (var o in created)
+            foreach (var o in owned)
                 if (o != null) Destroy(o);
-            created.Clear();
+            owned.Clear();
         }
     }
 }

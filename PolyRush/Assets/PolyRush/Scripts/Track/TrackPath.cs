@@ -3,230 +3,255 @@ using UnityEngine;
 
 namespace PolyRush
 {
-    public struct BoostRange
+    public struct Range
     {
-        public int Start;
-        public int End;
+        public int Start, End;
     }
 
-    /// <summary>
-    /// The sampled centre line of a track (one sample per metre) with a full orientation frame
-    /// per sample. Everything else (road mesh, scenery masking, checkpoints, boost pads,
-    /// respawning, camera) is derived from this, which guarantees the pieces always line up.
-    /// Keep the sampling in sync with Tools/track_tool.py.
-    /// </summary>
+    // The centre line of a track, one sample per metre, with a full frame (forward/right/up)
+    // at every sample. Road mesh, scenery, checkpoints, boost pads and respawns all come from
+    // this, which is why pieces always line up.
+    // Keep in sync with Tools/track_tool.py.
     public class TrackPath
     {
-        public const float Step = 1f;
-        public const float HalfWidth = 6f;
-        public const float WallThickness = 0.6f;
-        public const float WallHeight = 1.0f;
-        public const float SlabDepth = 0.8f;
+        public const float Tile = 10f;
+        public const float Level = 2.5f;
+        public const float HalfWidth = 4.5f;
+        public const float WallThickness = 0.5f;
+        public const float WallHeight = 0.7f;
+        public const float SlabDepth = 1.0f;
+        public const float LoopRadius = 12f;
+        const float RampRise = 0.3f;
 
         public readonly List<Vector3> Pos = new List<Vector3>();
         public readonly List<float> Yaw = new List<float>();
         public readonly List<bool> Gap = new List<bool>();
+        public readonly List<int> LoopId = new List<int>();
+        readonly List<Vector3> upHint = new List<Vector3>();
         readonly List<float> bankTarget = new List<float>();
 
-        public Vector3[] Fwd;
-        public Vector3[] Right;
-        public Vector3[] Up;
-        public float[] Dist;
-        public float[] Bank;
+        public Vector3[] Fwd, Right, Up;
+        public float[] Dist, Curvature;
 
         public readonly List<int> Checkpoints = new List<int>();
-        public readonly List<BoostRange> Boosts = new List<BoostRange>();
-        public int SpawnIndex;
-        public int StartLineIndex;
-        public int FinishIndex;
+        public readonly List<Range> Boosts = new List<Range>();
+        public int SpawnIndex, StartLineIndex, FinishIndex;
         public float TotalLength;
         public Bounds Bounds;
         public float MinY, MaxY;
 
         public int Count { get { return Pos.Count; } }
 
+        Vector3 p;
+        float yaw;
+        int loops;
+
         static float Smooth(float t) { return t * t * (3f - 2f * t); }
 
-        static Vector3 Dir(float yawDeg)
+        static Vector3 Dir(float deg)
         {
-            float r = yawDeg * Mathf.Deg2Rad;
+            float r = deg * Mathf.Deg2Rad;
             return new Vector3(Mathf.Sin(r), 0f, Mathf.Cos(r));
         }
 
-        void Push(Vector3 p, float yaw, bool gap, float bank)
+        void Push(bool gap = false, float bank = 0f, int loop = 0, Vector3 hint = default(Vector3))
         {
             Pos.Add(p);
             Yaw.Add(yaw);
             Gap.Add(gap);
+            LoopId.Add(loop);
             bankTarget.Add(bank);
+            upHint.Add(hint);
+        }
+
+        // ease: 0 smooth, 1 accelerating (t^2), 2 linear
+        void Straight(float length, float rise = 0f, int ease = 0, bool gap = false)
+        {
+            int n = Mathf.Max(1, Mathf.RoundToInt(length));
+            float y0 = p.y;
+            Vector3 step = Dir(yaw) * (length / n);
+            for (int i = 1; i <= n; i++)
+            {
+                float t = i / (float)n;
+                float e = ease == 0 ? Smooth(t) : ease == 1 ? t * t : t;
+                p += step;
+                p.y = y0 + rise * e;
+                Push(gap);
+            }
+        }
+
+        void Turn(float size, int dir, float rise, bool bank)
+        {
+            float radius = (size - 0.5f) * Tile;
+            float angle = 90f * dir;
+            float arc = radius * Mathf.PI * 0.5f;
+            int n = Mathf.Max(2, Mathf.RoundToInt(arc));
+            float y0 = p.y, yaw0 = yaw;
+            float bankDeg = bank ? Mathf.Clamp(140f / radius + 8f, 10f, 22f) : 0f;
+            for (int i = 1; i <= n; i++)
+            {
+                float t = i / (float)n;
+                p += Dir(yaw0 + angle * (i - 0.5f) / n) * (arc / n);
+                yaw = yaw0 + angle * t;
+                p.y = y0 + rise * Smooth(t);
+                Push(false, -dir * bankDeg);
+            }
+        }
+
+        // A full vertical loop. It moves forward two tiles and shifts one tile sideways so the
+        // way out runs next to the way in.
+        void Loop(int side)
+        {
+            loops++;
+            Vector3 f0 = Dir(yaw), r0 = Vector3.Cross(Vector3.up, f0);
+            Vector3 start = p;
+            float advance = 2f * Tile;
+            int n = Mathf.RoundToInt(2f * Mathf.PI * LoopRadius * 1.15f);
+            for (int i = 1; i <= n; i++)
+            {
+                float th = 2f * Mathf.PI * i / n;
+                float along = LoopRadius * Mathf.Sin(th) + advance * th / (2f * Mathf.PI);
+                float height = LoopRadius * (1f - Mathf.Cos(th));
+                float lateral = side * Tile * Smooth(th / (2f * Mathf.PI));
+                p = start + f0 * along + r0 * lateral + Vector3.up * height;
+                Vector3 up = Vector3.up * Mathf.Cos(th) - f0 * Mathf.Sin(th);
+                Push(false, 0f, loops, up);
+            }
+            p.y = start.y;
         }
 
         public static TrackPath Build(TrackInfo info)
         {
             var path = new TrackPath();
-            Vector3 p = Vector3.zero;
-            float yaw = 0f;
-            path.Push(p, yaw, false, 0f);
-            var boostMarks = new List<KeyValuePair<int, float>>();
-
-            foreach (var c in info.Commands)
+            path.Push();
+            int start = 0, finish = -1;
+            foreach (var pc in info.Pieces)
             {
-                switch (c.Op)
+                int here = path.Pos.Count - 1;
+                switch (pc.Type)
                 {
-                    case "S":
-                    case "UP":
-                    case "DOWN":
-                    {
-                        float len = c.Arg(0, 10f);
-                        float rise = c.Arg(1, 0f);
-                        if (c.Op == "DOWN") rise = -Mathf.Abs(rise);
-                        int n = Mathf.Max(1, Mathf.RoundToInt(len / Step));
-                        float y0 = p.y;
-                        Vector3 d = Dir(yaw) * (len / n);
-                        for (int i = 1; i <= n; i++)
-                        {
-                            float t = i / (float)n;
-                            p += d;
-                            p.y = y0 + rise * Smooth(t);
-                            path.Push(p, yaw, false, 0f);
-                        }
+                    case PieceType.Start:
+                        start = here;
+                        path.Straight(Tile);
                         break;
-                    }
-                    case "L":
-                    case "R":
-                    {
-                        float ang = Mathf.Abs(c.Arg(0, 90f)) * (c.Op == "R" ? 1f : -1f);
-                        float rad = Mathf.Max(8f, c.Arg(1, 40f));
-                        float rise = c.Arg(2, 0f);
-                        float arc = rad * Mathf.Abs(ang) * Mathf.Deg2Rad;
-                        int n = Mathf.Max(2, Mathf.RoundToInt(arc / Step));
-                        float y0 = p.y, yaw0 = yaw;
-                        float bank = -Mathf.Sign(ang) * Mathf.Abs(c.Bank);
-                        for (int i = 1; i <= n; i++)
-                        {
-                            float t = i / (float)n;
-                            float ym = yaw0 + ang * (i - 0.5f) / n;
-                            p += Dir(ym) * (arc / n);
-                            yaw = yaw0 + ang * t;
-                            p.y = y0 + rise * Smooth(t);
-                            path.Push(p, yaw, false, bank);
-                        }
+                    case PieceType.Finish:
+                        finish = here + (int)(Tile / 2);
+                        path.Straight(Tile * 3);   // finish tile + run-off
                         break;
-                    }
-                    case "KICK":
-                    case "LAND":
-                    case "OUTRUN":
-                    case "GAP":
-                    {
-                        float len = c.Arg(0, 10f);
-                        float rise = c.Arg(1, 0f);
-                        if (c.Op == "LAND" || c.Op == "OUTRUN") rise = -Mathf.Abs(rise);
-                        int n = Mathf.Max(1, Mathf.RoundToInt(len / Step));
-                        float y0 = p.y;
-                        Vector3 d = Dir(yaw) * (len / n);
-                        bool gap = c.Op == "GAP";
-                        for (int i = 1; i <= n; i++)
-                        {
-                            float t = i / (float)n;
-                            p += d;
-                            float e;
-                            if (c.Op == "KICK" || c.Op == "LAND") e = t * t;
-                            else if (c.Op == "OUTRUN") e = 1f - (1f - t) * (1f - t);
-                            else e = t;
-                            p.y = y0 + rise * e;
-                            path.Push(p, yaw, gap, 0f);
-                        }
+                    case PieceType.Checkpoint:
+                        path.Checkpoints.Add(here + (int)(Tile / 2));
+                        path.Straight(Tile);
                         break;
-                    }
-                    case "CP":
-                        path.Checkpoints.Add(path.Pos.Count - 1);
+                    case PieceType.Forward:
+                        path.Straight(pc.Size * Tile);
                         break;
-                    case "BOOST":
-                        boostMarks.Add(new KeyValuePair<int, float>(path.Pos.Count - 1, c.Arg(0, 15f)));
+                    case PieceType.Boost:
+                        path.Straight(pc.Size * Tile);
+                        path.Boosts.Add(new Range { Start = here, End = path.Pos.Count - 1 });
                         break;
-                    default:
-                        Debug.LogWarning("PolyRush: unknown track command '" + c.Op + "' (track " + info.Id + ", line " + c.Line + ")");
+                    case PieceType.Slope:
+                        path.Straight(pc.Size * Tile, pc.Dir * pc.Size * Level * (pc.Steep ? 2f : 1f));
+                        break;
+                    case PieceType.Turn:
+                        path.Turn(pc.Size, pc.Dir, pc.Levels * Level, pc.Bank);
+                        break;
+                    case PieceType.Ramp:
+                        path.Straight(Tile, RampRise, 1);
+                        break;
+                    case PieceType.Gap:
+                        path.Straight(pc.Size * Tile, pc.Levels * Level, 2, true);
+                        break;
+                    case PieceType.Loop:
+                        path.Loop(pc.Dir);
                         break;
                 }
             }
-
-            path.Finish(boostMarks);
+            path.Finish(start, finish);
             return path;
         }
 
-        void Finish(List<KeyValuePair<int, float>> boostMarks)
+        void Finish(int start, int finish)
         {
             int n = Pos.Count;
             Fwd = new Vector3[n];
             Right = new Vector3[n];
             Up = new Vector3[n];
             Dist = new float[n];
-            Bank = new float[n];
+            Curvature = new float[n];
 
-            // Arc length
             for (int i = 1; i < n; i++) Dist[i] = Dist[i - 1] + Vector3.Distance(Pos[i - 1], Pos[i]);
             TotalLength = Dist[n - 1];
 
-            // Smooth bank (two box blur passes ~ +-12 m) so banking always eases in and out.
+            // blur the bank angle so it rolls in and out instead of snapping
+            var bank = bankTarget.ToArray();
             var tmp = new float[n];
-            for (int i = 0; i < n; i++) Bank[i] = bankTarget[i];
             for (int pass = 0; pass < 2; pass++)
             {
-                const int r = 12;
                 for (int i = 0; i < n; i++)
                 {
-                    float s = 0f;
+                    float sum = 0f;
                     int c = 0;
-                    for (int k = i - r; k <= i + r; k++)
-                    {
-                        if (k < 0 || k >= n) continue;
-                        s += Bank[k];
-                        c++;
-                    }
-                    tmp[i] = s / c;
+                    for (int k = Mathf.Max(0, i - 8); k <= Mathf.Min(n - 1, i + 8); k++) { sum += bank[k]; c++; }
+                    tmp[i] = sum / c;
                 }
-                System.Array.Copy(tmp, Bank, n);
+                System.Array.Copy(tmp, bank, n);
             }
 
             for (int i = 0; i < n; i++)
             {
-                Vector3 a = Pos[Mathf.Max(0, i - 1)];
-                Vector3 b = Pos[Mathf.Min(n - 1, i + 1)];
-                Vector3 f = (b - a);
+                Vector3 f = Pos[Mathf.Min(n - 1, i + 1)] - Pos[Mathf.Max(0, i - 1)];
                 if (f.sqrMagnitude < 1e-6f) f = Dir(Yaw[i]);
                 f.Normalize();
-                Vector3 r = Vector3.Cross(Vector3.up, f).normalized;
-                Vector3 u = Vector3.Cross(f, r).normalized;
-                Quaternion q = Quaternion.AngleAxis(Bank[i], f);
+                Vector3 r, u;
+                if (upHint[i] != Vector3.zero)
+                {
+                    r = Vector3.Cross(upHint[i], f).normalized;
+                    u = Vector3.Cross(f, r);
+                }
+                else
+                {
+                    r = Vector3.Cross(Vector3.up, f).normalized;
+                    u = Vector3.Cross(f, r);
+                    var q = Quaternion.AngleAxis(bank[i], f);
+                    r = q * r;
+                    u = q * u;
+                }
                 Fwd[i] = f;
-                Right[i] = q * r;
-                Up[i] = q * u;
+                Right[i] = r;
+                Up[i] = u;
             }
 
-            foreach (var kv in boostMarks)
+            // how fast the road bends towards its own "up" (loops, dips) - the car uses this to stick
+            for (int i = 1; i < n - 1; i++)
             {
-                int s = Mathf.Clamp(kv.Key, 0, n - 1);
-                int e = s;
-                while (e < n - 1 && Dist[e] - Dist[s] < kv.Value) e++;
-                var br = new BoostRange();
-                br.Start = s;
-                br.End = e;
-                Boosts.Add(br);
+                float ds = Dist[i + 1] - Dist[i - 1];
+                if (ds > 1e-4f) Curvature[i] = Vector3.Dot((Fwd[i + 1] - Fwd[i - 1]) / ds, Up[i]);
             }
 
-            SpawnIndex = IndexAtDistance(6f);
-            StartLineIndex = IndexAtDistance(11f);
-            FinishIndex = IndexAtDistance(Mathf.Max(TotalLength - 70f, TotalLength * 0.75f));
+            SpawnIndex = Mathf.Min(n - 1, start + 3);
+            StartLineIndex = Mathf.Min(n - 1, start + 8);
+            FinishIndex = finish > 0 ? finish : n - 1;
 
+            Bounds = new Bounds(Pos[0], Vector3.zero);
             MinY = float.MaxValue;
             MaxY = float.MinValue;
-            Bounds = new Bounds(Pos[0], Vector3.zero);
-            for (int i = 0; i < n; i++)
+            foreach (var q in Pos)
             {
-                Bounds.Encapsulate(Pos[i]);
-                MinY = Mathf.Min(MinY, Pos[i].y);
-                MaxY = Mathf.Max(MaxY, Pos[i].y);
+                Bounds.Encapsulate(q);
+                MinY = Mathf.Min(MinY, q.y);
+                MaxY = Mathf.Max(MaxY, q.y);
             }
+        }
+
+        public bool HasRoad(int i) { return i >= 0 && i + 1 < Count && !Gap[i + 1]; }
+
+        public bool InLoop(int i) { return i >= 0 && i < Count && LoopId[i] > 0; }
+
+        public Quaternion RotationAt(int i) { return Quaternion.LookRotation(Fwd[i], Up[i]); }
+
+        public Vector3 SurfacePoint(int i, float lateral, float height)
+        {
+            return Pos[i] + Right[i] * lateral + Up[i] * height;
         }
 
         public int IndexAtDistance(float d)
@@ -239,84 +264,56 @@ namespace PolyRush
                 int mid = (lo + hi) / 2;
                 if (Dist[mid] < d) lo = mid; else hi = mid;
             }
-            return (d - Dist[lo] < Dist[hi] - d) ? lo : hi;
+            return d - Dist[lo] < Dist[hi] - d ? lo : hi;
         }
 
-        public Quaternion RotationAt(int i)
+        public int Nearest(Vector3 q, int hint, int window)
         {
-            return Quaternion.LookRotation(Fwd[i], Up[i]);
-        }
-
-        /// <summary>Point on the road surface at a lateral offset from the centre line.</summary>
-        public Vector3 SurfacePoint(int i, float lateral, float height)
-        {
-            return Pos[i] + Right[i] * lateral + Up[i] * height;
-        }
-
-        /// <summary>True if the segment between sample i and i+1 has road (is not part of a gap).</summary>
-        public bool HasRoad(int i)
-        {
-            return i >= 0 && i + 1 < Count && !Gap[i + 1];
-        }
-
-        public int Nearest(Vector3 p, int hint, int window)
-        {
-            int best = -1;
-            float bestD = float.MaxValue;
             int a = 0, b = Count - 1;
             if (hint >= 0)
             {
                 a = Mathf.Max(0, hint - window);
                 b = Mathf.Min(Count - 1, hint + window);
             }
+            int best = a;
+            float bestD = float.MaxValue;
             for (int i = a; i <= b; i++)
             {
-                float d = (Pos[i] - p).sqrMagnitude;
-                if (d < bestD)
-                {
-                    bestD = d;
-                    best = i;
-                }
+                float d = (Pos[i] - q).sqrMagnitude;
+                if (d < bestD) { bestD = d; best = i; }
             }
             return best;
         }
 
-        /// <summary>
-        /// Rough "good driver" time used for medal targets: curvature-limited speed profile
-        /// with acceleration / braking passes. Mirrors par_time() in Tools/track_tool.py.
-        /// </summary>
-        public float EstimateParTime()
+        // A rough "clean lap" time used to set medal targets.
+        public float ParTime()
         {
             int n = Count;
-            const float maxSpeed = CarController.DefaultMaxSpeed;
-            const float accel = 22f, brake = 28f, latMax = 30f;
-            var curv = new float[n];
-            for (int i = 1; i < n - 1; i++)
-            {
-                float dyaw = Mathf.Abs(Yaw[i + 1] - Yaw[i - 1]) * Mathf.Deg2Rad;
-                curv[i] = dyaw / (2f * Step);
-            }
-            var boost = new bool[n];
-            foreach (var b in Boosts) for (int k = b.Start; k <= b.End; k++) boost[k] = true;
-            var vmax = new float[n];
+            const float top = CarController.TopSpeed, accel = 24f, brake = 34f, grip = 34f;
+            var limit = new float[n];
             for (int i = 0; i < n; i++)
             {
-                float c = 0f;
-                for (int k = Mathf.Max(0, i - 3); k <= Mathf.Min(n - 1, i + 3); k++) c = Mathf.Max(c, curv[k]);
-                vmax[i] = c < 1e-4f ? maxSpeed : Mathf.Min(maxSpeed + 15f, Mathf.Sqrt(latMax / c));
+                float turn = 0f;
+                for (int k = Mathf.Max(1, i - 3); k <= Mathf.Min(n - 2, i + 3); k++)
+                    turn = Mathf.Max(turn, Mathf.Abs(Mathf.DeltaAngle(Yaw[k - 1], Yaw[k + 1])) * Mathf.Deg2Rad / 2f);
+                limit[i] = turn < 1e-4f ? top : Mathf.Min(top, Mathf.Sqrt(grip / turn));
             }
+            foreach (var b in Boosts)
+                for (int k = b.Start; k <= b.End; k++) limit[k] = top + 20f;
+
             var v = new float[n];
             for (int i = 1; i < n; i++)
             {
-                float x = v[i - 1] / maxSpeed;
-                float acc = accel * Mathf.Max(0.05f, 1f - x * x);
-                if (boost[i]) acc += 30f;
-                v[i] = Mathf.Min(vmax[i], Mathf.Sqrt(v[i - 1] * v[i - 1] + 2f * acc * Step));
+                float x = v[i - 1] / top;
+                float a = accel * Mathf.Max(0.05f, 1f - x * x);
+                v[i] = Mathf.Min(limit[i], Mathf.Sqrt(v[i - 1] * v[i - 1] + 2f * a));
             }
-            for (int i = n - 2; i >= 0; i--) v[i] = Mathf.Min(v[i], Mathf.Sqrt(v[i + 1] * v[i + 1] + 2f * brake * Step));
-            float t = 0f;
-            for (int i = Mathf.Max(1, SpawnIndex); i <= FinishIndex; i++) t += Step / Mathf.Max(1f, 0.5f * (v[i] + v[i - 1]));
-            return t;
+            for (int i = n - 2; i >= 0; i--) v[i] = Mathf.Min(v[i], Mathf.Sqrt(v[i + 1] * v[i + 1] + 2f * brake));
+
+            float time = 0f;
+            for (int i = SpawnIndex + 1; i <= FinishIndex; i++)
+                time += (Dist[i] - Dist[i - 1]) / Mathf.Max(2f, 0.5f * (v[i] + v[i - 1]));
+            return time;
         }
     }
 }

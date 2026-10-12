@@ -1,0 +1,31 @@
+name: Meadow Run
+theme: meadow
+difficulty: 1
+
+start
+forward 3
+right 3 up=1
+right 3 up=1
+right 3 up=1
+forward 3
+down 3
+left 3
+cp
+forward 2
+right 3
+boost
+forward 6
+right 3
+forward 2
+cp
+forward 4
+right 2
+forward 2
+left 2
+forward 2
+right 3
+boost
+forward 4
+right 3
+forward 1
+finish

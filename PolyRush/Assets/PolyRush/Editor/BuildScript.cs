@@ -5,26 +5,20 @@ using UnityEngine;
 
 namespace PolyRush.EditorTools
 {
-    /// <summary>
-    /// One-click builds.
-    ///   Menu:          PolyRush > Build Windows (64-bit)
-    ///   Command line:  Unity.exe -batchmode -quit -projectPath . -executeMethod PolyRush.EditorTools.BuildScript.BuildWindows
-    /// </summary>
+    // PolyRush > Build Windows, or from a terminal:
+    //   Unity.exe -batchmode -quit -projectPath . -executeMethod PolyRush.EditorTools.BuildScript.BuildWindows
     public static class BuildScript
     {
-        const string WindowsPath = "Builds/Windows/PolyRush.exe";
-        const string WebGLPath = "Builds/WebGL";
-
-        [MenuItem("PolyRush/Build Windows (64-bit)", priority = 20)]
+        [MenuItem("PolyRush/Build Windows", priority = 20)]
         public static void BuildWindows()
         {
-            Build(BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, WindowsPath);
+            Build(BuildTarget.StandaloneWindows64, BuildTargetGroup.Standalone, "Builds/Windows/" + GameInfo.Title + ".exe");
         }
 
-        [MenuItem("PolyRush/Build WebGL (for website, needs WebGL module)", priority = 21)]
+        [MenuItem("PolyRush/Build WebGL", priority = 21)]
         public static void BuildWebGL()
         {
-            Build(BuildTarget.WebGL, BuildTargetGroup.WebGL, WebGLPath);
+            Build(BuildTarget.WebGL, BuildTargetGroup.WebGL, "Builds/WebGL");
         }
 
         [MenuItem("PolyRush/Open Builds Folder", priority = 40)]
@@ -36,36 +30,34 @@ namespace PolyRush.EditorTools
 
         static void Build(BuildTarget target, BuildTargetGroup group, string path)
         {
-            ProjectSetup.PrepareSceneForBuild();
+            ProjectSetup.PrepareForBuild();
             if (!BuildPipeline.IsBuildTargetSupported(group, target))
             {
-                string msg = "PolyRush: the " + target + " build module is not installed. Add it in Unity Hub (Installs > Add modules).";
+                string msg = target + " support isn't installed. Add it in Unity Hub under Installs > Add modules.";
                 Debug.LogError(msg);
-                if (!Application.isBatchMode) EditorUtility.DisplayDialog("PolyRush build", msg, "OK");
-                else EditorApplication.Exit(1);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+                else EditorUtility.DisplayDialog("Can't build", msg, "OK");
                 return;
             }
-            var dir = Path.GetDirectoryName(path);
+            string dir = Path.GetDirectoryName(path);
             if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
 
-            var options = new BuildPlayerOptions
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 scenes = new[] { ProjectSetup.ScenePath },
                 locationPathName = path,
                 target = target,
                 targetGroup = group,
-                options = BuildOptions.None,
-            };
-            BuildReport report = BuildPipeline.BuildPlayer(options);
-            var summary = report.summary;
-            if (summary.result == BuildResult.Succeeded)
+            });
+            var result = report.summary;
+            if (result.result == BuildResult.Succeeded)
             {
-                Debug.Log("PolyRush: build succeeded (" + (summary.totalSize / (1024f * 1024f)).ToString("0.0") + " MB) -> " + Path.GetFullPath(path));
+                Debug.Log("Built " + Path.GetFullPath(path) + " (" + (result.totalSize / 1048576f).ToString("0.0") + " MB)");
                 if (!Application.isBatchMode) EditorUtility.RevealInFinder(Path.GetFullPath(path));
             }
             else
             {
-                Debug.LogError("PolyRush: build failed: " + summary.result + " (" + summary.totalErrors + " errors)");
+                Debug.LogError("Build failed: " + result.result + ", " + result.totalErrors + " errors");
                 if (Application.isBatchMode) EditorApplication.Exit(1);
             }
         }

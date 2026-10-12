@@ -1,0 +1,33 @@
+name: Pine Hills
+theme: forest
+difficulty: 2
+
+start
+forward 2
+up 2
+right 3 bank
+forward 2
+down 2
+right 3 bank
+cp
+forward 1
+right 3 up=2
+forward 1
+up 1
+boost
+forward 4
+ramp
+gap 2 drop=1
+forward 6
+down 2
+left 3 bank
+forward 2
+cp
+left 2
+forward 3
+right 2
+left 2
+forward 2
+left 3 bank
+forward 1
+finish

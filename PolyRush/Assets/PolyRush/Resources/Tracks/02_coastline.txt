@@ -1,0 +1,29 @@
+name: Coastline
+theme: coast
+difficulty: 1
+
+start
+forward 4
+left 4
+forward 3
+left 3
+up 1
+left 3 up=2
+forward 8
+down 3
+right 3
+forward 2
+cp
+boost
+forward 4
+right 4
+forward 3
+right 3
+up 1
+forward 2
+left 3 down=1
+forward 2
+cp
+left 3
+forward 1
+finish

@@ -4,12 +4,9 @@ using UnityEngine.Rendering;
 
 namespace PolyRush
 {
-    /// <summary>
-    /// Small mesh construction helper used for all procedural geometry.
-    /// Flat-shaded helpers duplicate vertices per face (classic low-poly look) and
-    /// automatically orient faces outwards from a given centre, so winding mistakes are impossible.
-    /// Vertex colour alpha below 1 marks emissive areas for the PolyRush/Lit shader.
-    /// </summary>
+    // Builds meshes from code. The Flat* helpers give each face its own vertices (hard low-poly
+    // edges) and flip faces to point away from an "inside" point, so I never have to think about
+    // winding order. Vertex alpha below 1 = glow in the PolyRush/Lit shader.
     public class MeshBuilder
     {
         public readonly List<Vector3> Verts = new List<Vector3>();
@@ -57,7 +54,7 @@ namespace PolyRush
             t.Add(a); t.Add(b); t.Add(c);
         }
 
-        /// <summary>Adds a quad from 4 existing vertex indices, oriented so its face normal agrees with 'expected'.</summary>
+        // adds a quad from 4 existing vertex indices, oriented so its face normal agrees with 'expected'.
         public void AddQuadIdx(int a, int b, int c, int d, Vector3 expected, int sub = 0)
         {
             Vector3 n = Vector3.Cross(Verts[b] - Verts[a], Verts[c] - Verts[a]);
@@ -77,7 +74,7 @@ namespace PolyRush
 
         // ---------------------------------------------------------------- flat primitives
 
-        /// <summary>Flat triangle in local space (transformed by Matrix). Oriented away from 'inside' (local space).</summary>
+        // flat triangle in local space (transformed by Matrix). Oriented away from 'inside' (local space).
         public void FlatTri(Vector3 a, Vector3 b, Vector3 c, Color col, Vector3 inside, int sub = 0)
         {
             Vector3 wa = T(a), wb = T(b), wc = T(c), wi = T(inside);
@@ -95,7 +92,7 @@ namespace PolyRush
             AddTriangle(i0, i1, i2, sub);
         }
 
-        /// <summary>Flat triangle with an explicit facing direction (local space), for open surfaces.</summary>
+        // flat triangle with an explicit facing direction (local space), for open surfaces.
         public void FlatTriFacing(Vector3 a, Vector3 b, Vector3 c, Color col, Vector3 facing, int sub = 0)
         {
             Vector3 centre = (a + b + c) / 3f;
@@ -108,7 +105,7 @@ namespace PolyRush
             FlatTri(a, c, d, col, inside, sub);
         }
 
-        /// <summary>Flat quad with explicit UVs (banners, signs). 'facing' is the desired normal (local space).</summary>
+        // flat quad with explicit UVs (banners, signs). 'facing' is the desired normal (local space).
         public void QuadUV(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector2 ua, Vector2 ub, Vector2 uc, Vector2 ud,
                            Color col, Vector3 facing, int sub = 0)
         {
@@ -121,7 +118,7 @@ namespace PolyRush
             AddQuadIdx(i0, i1, i2, i3, wf, sub);
         }
 
-        /// <summary>Double sided flat quad (leaves, flags).</summary>
+        // double sided flat quad (leaves, flags).
         public void DoubleQuad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color front, Color back, int sub = 0)
         {
             Vector3 n = Vector3.Cross(b - a, c - a).normalized;
@@ -138,10 +135,9 @@ namespace PolyRush
             FlatTri(a, b, c, back, centre + n * 0.01f, sub);
         }
 
-        /// <summary>
-        /// Convex hexahedron from 8 corners: 0-3 bottom ring, 4-7 top ring (same order).
-        /// faceColors (optional, 6 entries): bottom, top, then the 4 sides (0-1, 1-2, 2-3, 3-0).
-        /// </summary>
+        // Convex hexahedron from 8 corners: 0-3 bottom ring, 4-7 top ring (same order).
+
+        // faceColors (optional, 6 entries): bottom, top, then the 4 sides (0-1, 1-2, 2-3, 3-0).
         public void Hexa(Vector3[] c, Color col, Color[] faceColors = null, int sub = 0)
         {
             Vector3 centre = Vector3.zero;
@@ -171,7 +167,7 @@ namespace PolyRush
             }, col, null, sub);
         }
 
-        /// <summary>Box tapered on top (top half-extents scaled by 'topScale').</summary>
+        // box tapered on top (top half-extents scaled by 'topScale').
         public void TaperBox(Vector3 centre, Vector3 size, float topScaleX, float topScaleZ, Color col, int sub = 0)
         {
             Vector3 h = size * 0.5f;
@@ -185,7 +181,7 @@ namespace PolyRush
             }, col, null, sub);
         }
 
-        /// <summary>Cylinder / frustum along local +Y from y0 to y1.</summary>
+        // cylinder / frustum along local +Y from y0 to y1.
         public void Cylinder(Vector3 baseCentre, float r0, float r1, float height, int sides, Color col,
                              bool capBottom = true, bool capTop = true, int sub = 0, float angleOffset = 0f)
         {
@@ -206,7 +202,7 @@ namespace PolyRush
             }
         }
 
-        /// <summary>Cylinder along an arbitrary local axis (used for wheels).</summary>
+        // cylinder along an arbitrary local axis (used for wheels).
         public void CylinderAxis(Vector3 centre, Vector3 axis, float radius, float width, int sides, Color side, Color cap, int sub = 0)
         {
             axis.Normalize();
@@ -246,10 +242,9 @@ namespace PolyRush
             for (int i = 0; i < IcoVerts.Length; i++) IcoVerts[i] = IcoVerts[i].normalized;
         }
 
-        /// <summary>
-        /// Flat-shaded, optionally subdivided and jittered icosphere (foliage, rocks, clouds).
-        /// colorFn lets callers shade per face (gets the face normal in local space).
-        /// </summary>
+        // Flat-shaded, optionally subdivided and jittered icosphere (foliage, rocks, clouds).
+
+        // colorFn lets callers shade per face (gets the face normal in local space).
         public void Blob(Vector3 centre, Vector3 scale, int subdiv, float jitter, System.Random rng, Color col,
                          System.Func<Vector3, Color> colorFn = null, int sub = 0)
         {

@@ -1,0 +1,30 @@
+name: Lakeside Loop
+theme: lake
+difficulty: 2
+
+start
+forward 3
+boost
+forward 2
+loop
+forward 3
+right 3
+forward 2
+cp
+right 3
+up 2
+forward 3
+right 3 bank up=1
+forward 7
+down 3
+left 3 bank
+forward 2
+cp
+left 2
+boost
+forward 2
+loop left
+forward 2
+left 3
+forward 1
+finish

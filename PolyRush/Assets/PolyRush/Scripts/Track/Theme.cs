@@ -4,7 +4,7 @@ namespace PolyRush
 {
     public enum TreeKind { Round, Pine, Palm, Bush, Cactus, Birch }
 
-    /// <summary>Look and scenery settings for a summer environment.</summary>
+    // Colours and scenery for one environment.
     public class Theme
     {
         public string Id;
@@ -44,7 +44,7 @@ namespace PolyRush
         {
             var t = new Theme();
             t.Id = id;
-            // Defaults: bright summer day
+            // default: plain sunny day
             t.SkyTop = Hex(0x3E8EE8);
             t.SkyHorizon = Hex(0xBFE6FF);
             t.SkyBottom = Hex(0xD9EEF7);
@@ -62,11 +62,11 @@ namespace PolyRush
             switch (id)
             {
                 case "coast":
-                    t.DisplayName = "Golden Coast";
+                    t.DisplayName = "Coast";
                     t.Trees = new[] { TreeKind.Palm, TreeKind.Palm, TreeKind.Bush, TreeKind.Round };
                     t.TreeDensity = 0.7f;
                     t.OceanAngle = 115f;
-                    t.OceanDistance = 90f;
+                    t.OceanDistance = 55f;
                     t.HillAmp = 8f;
                     t.GrassA = Hex(0x7CC046);
                     t.GrassB = Hex(0x9CD15A);
@@ -74,7 +74,7 @@ namespace PolyRush
                     t.AccentColor = Hex(0x29B6F6);
                     break;
                 case "forest":
-                    t.DisplayName = "Pine Ridge";
+                    t.DisplayName = "Forest";
                     t.Trees = new[] { TreeKind.Pine, TreeKind.Pine, TreeKind.Pine, TreeKind.Birch, TreeKind.Bush };
                     t.TreeDensity = 1.5f;
                     t.HillAmp = 18f;
@@ -88,7 +88,7 @@ namespace PolyRush
                     t.RockDensity = 0.6f;
                     break;
                 case "lake":
-                    t.DisplayName = "Lakeside";
+                    t.DisplayName = "Lakes";
                     t.Trees = new[] { TreeKind.Round, TreeKind.Birch, TreeKind.Pine, TreeKind.Bush };
                     t.TreeDensity = 1.1f;
                     t.LakeAmount = 0.55f;
@@ -97,7 +97,7 @@ namespace PolyRush
                     t.AccentColor = Hex(0x26C6DA);
                     break;
                 case "canyon":
-                    t.DisplayName = "Sunbaked Canyon";
+                    t.DisplayName = "Canyon";
                     t.Trees = new[] { TreeKind.Cactus, TreeKind.Cactus, TreeKind.Bush };
                     t.TreeDensity = 0.35f;
                     t.RockDensity = 1.6f;
@@ -145,7 +145,7 @@ namespace PolyRush
                     t.AccentColor = Hex(0xFF8A65);
                     break;
                 case "tropic":
-                    t.DisplayName = "Tropic Island";
+                    t.DisplayName = "Island";
                     t.Trees = new[] { TreeKind.Palm, TreeKind.Palm, TreeKind.Palm, TreeKind.Bush, TreeKind.Round };
                     t.TreeDensity = 1.0f;
                     t.Island = true;
@@ -162,7 +162,7 @@ namespace PolyRush
                     break;
                 default: // meadow
                     t.Id = "meadow";
-                    t.DisplayName = "Sunny Meadow";
+                    t.DisplayName = "Meadow";
                     t.Trees = new[] { TreeKind.Round, TreeKind.Round, TreeKind.Birch, TreeKind.Bush, TreeKind.Pine };
                     t.TreeDensity = 0.9f;
                     t.LakeAmount = 0.12f;

@@ -1,0 +1,44 @@
+name: Island Chaos
+theme: tropic
+difficulty: 4
+
+start
+forward 2
+right 1
+left 1
+forward 1
+boost
+forward 1
+loop left
+forward 2
+cp
+right 2 up=2
+forward 2
+right 1
+forward 2
+ramp
+gap 3 drop=1
+forward 5
+left 1
+down 1
+cp
+right 2
+forward 1
+boost
+forward 1
+loop
+forward 1
+right 1
+left 1
+forward 1
+right 2
+cp
+boost
+up 1 steep
+forward 1
+ramp
+gap 3 drop=2
+forward 6
+right 2
+forward 1
+finish

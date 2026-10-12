@@ -7,7 +7,7 @@ namespace PolyRush
 {
     public enum Medal { None = 0, Bronze = 1, Silver = 2, Gold = 3, Author = 4 }
 
-    /// <summary>Personal bests, checkpoint splits and ghost files, stored locally.</summary>
+    // Personal bests, checkpoint splits and ghost files. All stored on this computer.
     public static class Records
     {
         static string Key(string trackId, string what) { return "pr_rec_" + trackId + "_" + what; }
@@ -34,8 +34,8 @@ namespace PolyRush
             return res;
         }
 
-        /// <summary>Stores a run if it beats the current best. Returns true for a new record.</summary>
-        public static bool SubmitRun(string trackId, float time, float[] splits, GhostData ghost)
+        // saves the run if it's a new best. returns true if it was
+        public static bool SubmitRun(string trackId, float time, float[] splits, Ghost ghost)
         {
             float best = BestTime(trackId);
             if (best > 0f && time >= best) return false;
@@ -64,7 +64,7 @@ namespace PolyRush
             return Path.Combine(Path.Combine(Application.persistentDataPath, "ghosts"), trackId + ".ghost");
         }
 
-        public static void SaveGhost(string trackId, GhostData ghost)
+        public static void SaveGhost(string trackId, Ghost ghost)
         {
             try
             {
@@ -74,21 +74,21 @@ namespace PolyRush
             }
             catch (Exception e)
             {
-                Debug.LogWarning("PolyRush: could not save ghost: " + e.Message);
+                Debug.LogWarning("Couldn't save ghost: " + e.Message);
             }
         }
 
-        public static GhostData LoadGhost(string trackId)
+        public static Ghost LoadGhost(string trackId)
         {
             try
             {
                 string path = GhostPath(trackId);
                 if (!File.Exists(path)) return null;
-                return GhostData.FromBytes(File.ReadAllBytes(path));
+                return Ghost.FromBytes(File.ReadAllBytes(path));
             }
             catch (Exception e)
             {
-                Debug.LogWarning("PolyRush: could not load ghost: " + e.Message);
+                Debug.LogWarning("Couldn't load ghost: " + e.Message);
                 return null;
             }
         }
@@ -107,10 +107,10 @@ namespace PolyRush
         {
             switch (m)
             {
-                case Medal.Author: return "AUTHOR";
-                case Medal.Gold: return "GOLD";
-                case Medal.Silver: return "SILVER";
-                case Medal.Bronze: return "BRONZE";
+                case Medal.Author: return "Author";
+                case Medal.Gold: return "Gold";
+                case Medal.Silver: return "Silver";
+                case Medal.Bronze: return "Bronze";
                 default: return "";
             }
         }
@@ -127,7 +127,7 @@ namespace PolyRush
             }
         }
 
-        /// <summary>Formats seconds as m:ss.fff</summary>
+        // 83.4567 -> 1:23.456
         public static string FormatTime(float t)
         {
             if (t < 0f) return "-:--.---";
