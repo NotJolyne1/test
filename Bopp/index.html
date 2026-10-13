@@ -1,0 +1,3732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bopp.io</title>
+<style>
+:root {
+  --bg: #12152a;
+  --frame: #1c2142;
+  --panel: #262c55;
+  --panel2: #2f3666;
+  --line: #3b4380;
+  --text: #eef0ff;
+  --dim: #9aa2d6;
+  --mint: #5ee6a8;
+  --coral: #ff6b6b;
+  --sun: #ffd166;
+  --sky: #5aa9ff;
+  --red: #ff5d6c;
+  --blue: #4f8dff;
+  --font: "Trebuchet MS", "Segoe UI", Verdana, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: radial-gradient(ellipse at top, #20264d 0%, var(--bg) 70%); color: var(--text); font-family: var(--font); overflow: hidden; user-select: none; }
+button, input, select { font-family: inherit; }
+
+#wrap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
+#topbar { width: min(1100px, 100%); display: flex; align-items: center; justify-content: space-between; padding: 0 6px 8px; color: var(--dim); font-size: 13px; }
+#topbar b { color: var(--text); }
+#topbar .online { color: var(--mint); }
+#frame { position: relative; width: min(1100px, 100%); aspect-ratio: 16 / 10; max-height: calc(100vh - 60px); background: var(--frame); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.45), inset 0 0 0 2px #2c3264; }
+#game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+.screen { position: absolute; inset: 0; display: none; }
+.screen.on { display: block; }
+.center { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 14px; }
+
+.btn { background: linear-gradient(#4a54a6, #3c458d); color: var(--text); border: 0; border-radius: 9px; padding: 10px 22px; font-size: 17px; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 #262c5e; transition: transform .06s, filter .1s; }
+.btn:hover { filter: brightness(1.15); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #262c5e; }
+.btn.go { background: linear-gradient(#63e8ad, #3cc68a); color: #10331f; box-shadow: 0 3px 0 #23855a; }
+.btn.warn { background: linear-gradient(#ff7a7a, #e35252); box-shadow: 0 3px 0 #a43535; }
+.btn.small { padding: 6px 12px; font-size: 14px; }
+.btn.big { padding: 14px 40px; font-size: 22px; min-width: 260px; }
+.btn:disabled { filter: grayscale(.8) brightness(.7); cursor: default; }
+
+.panel { background: var(--panel); border-radius: 12px; box-shadow: inset 0 0 0 2px var(--line); }
+.title { font-size: 22px; font-weight: bold; letter-spacing: .5px; }
+.dim { color: var(--dim); }
+input[type=text] { background: #171b38; color: var(--text); border: 2px solid var(--line); border-radius: 8px; padding: 9px 12px; font-size: 16px; outline: none; }
+input[type=text]:focus { border-color: var(--sky); }
+select { background: #171b38; color: var(--text); border: 2px solid var(--line); border-radius: 7px; padding: 5px 8px; font-size: 14px; }
+
+/* title */
+#logo { font-size: 84px; font-weight: 900; letter-spacing: -2px; line-height: 1; text-shadow: 0 6px 0 #0d1030, 0 0 40px rgba(94,230,168,.25); }
+#logo .o1 { color: var(--coral); } #logo .o2 { color: var(--sun); } #logo .io { color: var(--mint); font-size: 52px; }
+#tagline { color: var(--dim); margin-top: -6px; }
+
+/* menu */
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.menu-grid .btn { min-width: 240px; padding: 16px 20px; font-size: 20px; }
+#me-card { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
+#me-card canvas { position: static; width: 46px; height: 46px; }
+.xpbar { width: 160px; height: 8px; background: #171b38; border-radius: 4px; overflow: hidden; }
+.xpbar div { height: 100%; background: var(--mint); }
+
+/* room list */
+#rooms-wrap { position: absolute; inset: 18px; display: flex; flex-direction: column; gap: 10px; }
+#rooms-head { display: flex; align-items: center; gap: 10px; }
+#rooms-head .title { flex: 1; }
+#rooms-table { flex: 1; overflow-y: auto; padding: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th { text-align: left; color: var(--dim); font-weight: normal; padding: 6px 10px; position: sticky; top: 0; background: var(--panel); }
+td { padding: 8px 10px; border-top: 1px solid #333a72; }
+tr.room { cursor: pointer; }
+tr.room:hover td { background: #333a72; }
+tr.room.sel td { background: #3e478b; }
+tr.room.full td { color: #7c84bb; }
+.ping-g { color: var(--mint); } .ping-y { color: var(--sun); } .ping-r { color: var(--coral); }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; background: #3a4280; }
+
+/* lobby */
+#lobby-wrap { position: absolute; inset: 14px; display: grid; grid-template-columns: 1.25fr 1fr; grid-template-rows: auto 1fr auto; gap: 10px; }
+#lobby-head { grid-column: 1 / 3; display: flex; align-items: center; gap: 10px; }
+#lobby-head .title { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+#lobby-players { padding: 10px; overflow-y: auto; display: flex; gap: 10px; }
+.team-col { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.team-col h4 { margin: 2px 4px 4px; font-size: 14px; color: var(--dim); display: flex; justify-content: space-between; align-items: center; }
+.pl { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #2f3666; border-radius: 9px; min-height: 42px; }
+.pl canvas { position: static; width: 30px; height: 30px; flex: none; }
+.pl .nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl .lv { font-size: 12px; color: var(--dim); }
+.pl .pg { font-size: 12px; width: 44px; text-align: right; }
+.pl.me { box-shadow: inset 0 0 0 2px var(--mint); }
+.pl.red { border-left: 4px solid var(--red); } .pl.blue { border-left: 4px solid var(--blue); }
+.crown { color: var(--sun); font-size: 14px; }
+.empty-slot { opacity: .35; justify-content: center; font-size: 13px; }
+#lobby-chat { display: flex; flex-direction: column; padding: 10px; min-height: 0; }
+#chat-log { flex: 1; overflow-y: auto; font-size: 14px; line-height: 1.45; padding-right: 4px; }
+#chat-log .sys { color: var(--dim); font-style: italic; }
+#chat-log b { font-weight: bold; }
+#chat-in { margin-top: 8px; width: 100%; }
+#lobby-bar { grid-column: 1 / 3; display: flex; align-items: center; gap: 14px; padding: 10px 14px; flex-wrap: wrap; }
+#lobby-bar label { color: var(--dim); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+#lobby-bar .spacer { flex: 1; }
+#start-note { color: var(--sun); font-size: 14px; }
+
+/* skins */
+#skin-wrap { position: absolute; inset: 20px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; }
+#skin-preview { position: relative; display: flex; align-items: center; justify-content: center; }
+#skin-preview canvas { position: static; width: 260px; height: 260px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 7px; }
+.sw { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
+.sw.sel { outline: 3px solid #fff; outline-offset: 2px; }
+.pat { padding: 6px 12px; border-radius: 8px; background: #33397a; cursor: pointer; font-size: 14px; }
+.pat.sel { background: var(--sky); color: #08142e; font-weight: bold; }
+.skin-controls { padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+.skin-controls h4 { margin: 4px 0 0; color: var(--dim); font-weight: normal; }
+
+/* settings / help */
+.box { padding: 22px 28px; max-width: 760px; width: calc(100% - 60px); max-height: calc(100% - 40px); overflow-y: auto; }
+.box h3 { margin: 16px 0 6px; color: var(--sun); }
+.box p { margin: 4px 0; line-height: 1.45; }
+kbd { background: #171b38; border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 5px; padding: 1px 7px; font-family: inherit; font-size: 13px; }
+.row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+.row label { min-width: 150px; }
+
+/* in game */
+#hud-top { position: absolute; left: 0; right: 0; top: 8px; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; pointer-events: none; padding: 0 100px; }
+.chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; background: rgba(18,21,42,.7); border-radius: 14px; font-size: 13px; }
+.chip i { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+.chip.dead { opacity: .45; text-decoration: line-through; }
+.chip b { color: var(--sun); }
+#hud-mode { position: absolute; right: 12px; top: 46px; font-size: 12px; color: var(--dim); pointer-events: none; background: rgba(18,21,42,.7); padding: 3px 9px; border-radius: 10px; }
+#hud-chat { position: absolute; left: 12px; bottom: 12px; width: 340px; pointer-events: none; font-size: 14px; }
+#hud-chat .ln { background: rgba(18,21,42,.55); padding: 2px 8px; border-radius: 6px; margin-top: 3px; display: table; transition: opacity .6s; }
+#game-chat-in { position: absolute; left: 12px; bottom: 12px; width: 340px; display: none; pointer-events: auto; }
+#hud-esc { position: absolute; right: 12px; top: 8px; }
+#hud-hint { position: absolute; right: 14px; bottom: 12px; font-size: 12px; color: rgba(238,240,255,.55); pointer-events: none; text-align: right; }
+#esc-menu { position: absolute; inset: 0; background: rgba(10,12,28,.6); display: none; align-items: center; justify-content: center; }
+#esc-menu.on { display: flex; }
+#esc-menu .panel { padding: 24px 34px; display: flex; flex-direction: column; gap: 12px; align-items: stretch; min-width: 280px; text-align: center; }
+
+/* map editor */
+#s-editor { pointer-events: none; }
+#s-editor .panel { pointer-events: auto; position: absolute; left: 8px; right: 8px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; flex-wrap: wrap; background: rgba(38,44,85,.92); }
+#ed-top { top: 8px; }
+#ed-props { bottom: 8px; min-height: 44px; font-size: 13px; }
+#ed-shape-props, #ed-spawn-props { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#ed-props label { display: flex; align-items: center; gap: 5px; color: var(--dim); }
+#ed-props input[type=number] { width: 62px; background: #171b38; color: var(--text); border: 2px solid var(--line); border-radius: 6px; padding: 3px 5px; }
+#ed-props input[type=range] { width: 90px; }
+#s-editor .sep { width: 1px; align-self: stretch; background: var(--line); }
+#s-editor .grow { flex: 1; }
+#ed-name { width: 150px; padding: 5px 9px; font-size: 14px; }
+.tools { display: flex; gap: 4px; }
+.tool { background: #33397a; color: var(--text); border: 0; border-radius: 7px; padding: 6px 11px; font-size: 14px; cursor: pointer; }
+.tool:hover { filter: brightness(1.2); }
+.tool.on { background: var(--sky); color: #08142e; font-weight: bold; }
+#ed-colors { display: inline-flex; gap: 4px; }
+#ed-colors i { width: 18px; height: 18px; border-radius: 4px; cursor: pointer; box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
+#ed-colors i.sel { outline: 2px solid #fff; outline-offset: 1px; }
+#s-menu > .center > .btn.small { margin-top: 2px; }
+
+#toast { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); background: rgba(18,21,42,.9); padding: 8px 16px; border-radius: 10px; display: none; z-index: 20; }
+#loader { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 12px; background: var(--frame); z-index: 10; font-size: 18px; }
+#loader.on { display: flex; }
+.dots::after { content: ''; animation: dots 1.2s steps(4) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar">
+    <span><b>bopp.io</b> &nbsp;·&nbsp; push everyone off the map</span>
+    <span class="online" id="online-count">● 0 players online</span>
+  </div>
+  <div id="frame">
+    <canvas id="game"></canvas>
+
+    <!-- title -->
+    <div class="screen" id="s-title">
+      <div class="center">
+        <div id="logo">b<span class="o1">o</span>pp<span class="io">.io</span></div>
+        <div id="tagline">bump, bash and bop your friends off the map</div>
+        <div style="height:10px"></div>
+        <input type="text" id="name-in" maxlength="16" placeholder="Pick a name" style="width:260px;text-align:center">
+        <button class="btn go big" id="b-play">Play</button>
+        <div style="display:flex;gap:10px">
+          <button class="btn small" id="b-title-skins">Skin</button>
+          <button class="btn small" id="b-title-help">How to play</button>
+          <button class="btn small" id="b-title-settings">Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- main menu -->
+    <div class="screen" id="s-menu">
+      <div class="center">
+        <div class="panel" id="me-card">
+          <canvas id="me-skin" width="92" height="92"></canvas>
+          <div>
+            <div><b id="me-name">Guest</b> <span class="dim" id="me-level">Lv 1</span></div>
+            <div class="xpbar"><div id="me-xp" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="menu-grid">
+          <button class="btn go" id="b-quick">Quick Play</button>
+          <button class="btn" id="b-custom">Custom Games</button>
+          <button class="btn" id="b-editor">Map Editor</button>
+          <button class="btn" id="b-skins">Skins</button>
+          <button class="btn" id="b-settings">Settings</button>
+          <button class="btn" id="b-help">How to play</button>
+        </div>
+        <button class="btn small warn" id="b-logout">Change name</button>
+      </div>
+    </div>
+
+    <!-- room list -->
+    <div class="screen" id="s-rooms">
+      <div id="rooms-wrap">
+        <div id="rooms-head">
+          <button class="btn small" id="b-rooms-back">Back</button>
+          <div class="title">Custom Games</div>
+          <select id="room-filter">
+            <option value="all">All modes</option>
+          </select>
+          <button class="btn small" id="b-refresh">Refresh</button>
+          <button class="btn small" id="b-create">Create room</button>
+          <button class="btn small go" id="b-join">Join</button>
+        </div>
+        <div class="panel" id="rooms-table">
+          <table>
+            <thead><tr><th>Room</th><th>Players</th><th>Mode</th><th>Map</th><th>Ping</th></tr></thead>
+            <tbody id="rooms-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- create room -->
+    <div class="screen" id="s-create">
+      <div class="center">
+        <div class="panel box" style="max-width:460px">
+          <div class="title">Create a room</div>
+          <div class="row"><label>Room name</label><input type="text" id="cr-name" maxlength="28" style="flex:1"></div>
+          <div class="row"><label>Mode</label><select id="cr-mode" style="flex:1"></select></div>
+          <div class="row"><label>Max players</label><select id="cr-max" style="flex:1">
+            <option>2</option><option>4</option><option selected>6</option><option>8</option></select></div>
+          <div class="row" style="justify-content:flex-end;margin-top:18px">
+            <button class="btn small" id="b-create-cancel">Cancel</button>
+            <button class="btn small go" id="b-create-ok">Create</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- lobby -->
+    <div class="screen" id="s-lobby">
+      <div id="lobby-wrap">
+        <div id="lobby-head">
+          <button class="btn small warn" id="b-leave">Leave</button>
+          <div class="title" id="lobby-title">Room</div>
+          <span class="dim" id="lobby-count">0/8</span>
+        </div>
+        <div class="panel" id="lobby-players"></div>
+        <div class="panel" id="lobby-chat">
+          <div id="chat-log"></div>
+          <input type="text" id="chat-in" maxlength="120" placeholder="Say something (Enter)">
+        </div>
+        <div class="panel" id="lobby-bar">
+          <label>Mode <select id="lb-mode"></select></label>
+          <label>Map <select id="lb-map"></select></label>
+          <label>Wins to win <select id="lb-rounds"><option>1</option><option>2</option><option selected>3</option><option>5</option><option>7</option></select></label>
+          <label>Teams <select id="lb-teams"><option value="0">Off</option><option value="1">On</option></select></label>
+          <span id="team-btns" style="display:none">
+            <button class="btn small" id="b-team-red" style="background:linear-gradient(#ff7b88,#e5505f)">Join red</button>
+            <button class="btn small" id="b-team-blue" style="background:linear-gradient(#6aa2ff,#3f76e0)">Join blue</button>
+          </span>
+          <span class="spacer"></span>
+          <span id="start-note"></span>
+          <button class="btn go" id="b-start">Start</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- in game -->
+    <div class="screen" id="s-game">
+      <div id="hud-mode"></div>
+      <div id="hud-top"></div>
+      <div id="hud-chat"></div>
+      <input type="text" id="game-chat-in" maxlength="120" placeholder="Chat (Enter to send, Esc to cancel)">
+      <div id="hud-hint"></div>
+      <button class="btn small" id="hud-esc">Menu</button>
+      <div id="esc-menu">
+        <div class="panel">
+          <div class="title">Paused?</div>
+          <div class="dim" style="font-size:13px">The game keeps going for everyone else.</div>
+          <button class="btn" id="b-esc-resume">Back to game</button>
+          <button class="btn" id="b-esc-help">Controls</button>
+          <button class="btn warn" id="b-esc-leave">Leave room</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- skins -->
+    <div class="screen" id="s-skins">
+      <div id="skin-wrap">
+        <div class="panel" id="skin-preview"><canvas id="skin-canvas" width="520" height="520"></canvas></div>
+        <div class="panel skin-controls">
+          <div class="title">Your skin</div>
+          <h4>Main colour</h4><div class="swatches" id="sw-base"></div>
+          <h4>Second colour</h4><div class="swatches" id="sw-alt"></div>
+          <h4>Pattern</h4><div class="swatches" id="sw-pat"></div>
+          <div style="flex:1"></div>
+          <div class="row" style="justify-content:flex-end">
+            <button class="btn small" id="b-skin-random">Random</button>
+            <button class="btn small go" id="b-skin-done">Done</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- settings -->
+    <div class="screen" id="s-settings">
+      <div class="center">
+        <div class="panel box" style="max-width:520px">
+          <div class="title">Settings</div>
+          <div class="row"><label>Sound volume</label><input type="range" id="set-vol" min="0" max="100" style="flex:1"></div>
+          <div class="row"><label>Show chat in game</label><select id="set-chat"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="row"><label>Names above players</label><select id="set-names"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="row"><label>Screen shake</label><select id="set-shake"><option value="1">On</option><option value="0">Off</option></select></div>
+          <div class="row"><label>Show FPS</label><select id="set-fps"><option value="0">No</option><option value="1">Yes</option></select></div>
+          <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn small go" id="b-settings-done">Done</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- help -->
+    <div class="screen" id="s-help">
+      <div class="center">
+        <div class="panel box">
+          <div class="title">How to play</div>
+          <p>Everyone is a ball. Knock the others off the map or into anything red. Last one alive wins the round.</p>
+          <h3>Keys</h3>
+          <p><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> (or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>) roll and float</p>
+          <p><kbd>X</kbd> (or <kbd>Shift</kbd>) go heavy: you hit much harder and get pushed less, but you're slow to steer</p>
+          <p><kbd>Z</kbd> (or <kbd>Space</kbd>) special move, depends on the mode</p>
+          <p><kbd>Enter</kbd> chat &nbsp; <kbd>Esc</kbd> menu</p>
+          <h3>Modes</h3>
+          <p><b>Classic</b> push and go heavy.</p>
+          <p><b>Simple</b> same, but nobody can go heavy.</p>
+          <p><b>Arrows</b> hold <kbd>Z</kbd> to draw your bow, aim with <kbd>←</kbd><kbd>→</kbd>, let go to shoot. The longer you hold, the harder it flies. Arrows knock people back.</p>
+          <p><b>Death Arrows</b> same as Arrows, but one hit and you're out. Watch your own arrows too.</p>
+          <p><b>Grapple</b> hold <kbd>Z</kbd> to shoot a rope at the nearest thing in reach and get yanked towards it. Grab other players to pull them around.</p>
+          <p><b>VTOL</b> you're a little jet. <kbd>←</kbd><kbd>→</kbd> turn, <kbd>↑</kbd> thrust.</p>
+          <p><b>Football</b> red vs blue. Bop the ball into the other team's goal.</p>
+          <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn small go" id="b-help-done">Got it</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- map editor -->
+    <div class="screen" id="s-editor">
+      <div id="ed-top" class="panel">
+        <button class="btn small" id="ed-back">Back</button>
+        <span class="sep"></span>
+        <span class="tools" id="ed-tools">
+          <button class="tool on" data-tool="select" title="Select and drag (V)">Select</button>
+          <button class="tool" data-tool="rect" title="Drag to draw a platform (R)">Platform</button>
+          <button class="tool" data-tool="circle" title="Drag out a circle (C)">Circle</button>
+          <button class="tool" data-tool="spawn" title="Click to place a spawn (S)">Spawn</button>
+        </span>
+        <span class="sep"></span>
+        <input type="text" id="ed-name" maxlength="24" placeholder="map name">
+        <select id="ed-load"></select>
+        <button class="btn small warn" id="ed-remove" title="Delete this map from your saved maps">Delete map</button>
+        <span class="grow"></span>
+        <button class="btn small" id="ed-new">New</button>
+        <button class="btn small" id="ed-save">Save</button>
+        <button class="btn small go" id="ed-test">Test</button>
+      </div>
+      <div id="ed-props" class="panel">
+        <span class="dim" id="ed-empty">Pick a tool and draw on the stage. Del removes, Ctrl+D copies, Q/E rotate.</span>
+        <span id="ed-shape-props">
+          <label>Surface <select id="ed-surface">
+            <option value="normal">Normal</option><option value="ice">Ice</option><option value="bouncy">Bouncy</option>
+            <option value="death">Death</option><option value="nograpple">No grapple</option>
+          </select></label>
+          <label>Colour <span id="ed-colors"></span></label>
+          <label id="ed-w-l">W <input type="number" id="ed-w" min="10" max="1200" step="10"></label>
+          <label id="ed-h-l">H <input type="number" id="ed-h" min="10" max="800" step="10"></label>
+          <label id="ed-r-l">R <input type="number" id="ed-r" min="8" max="400" step="5"></label>
+          <label id="ed-a-l">Angle <input type="range" id="ed-a" min="-90" max="90" step="5"></label>
+          <label>Moves <select id="ed-move">
+            <option value="none">No</option><option value="x">Side to side</option><option value="y">Up and down</option><option value="spin">Spins</option>
+          </select></label>
+          <button class="btn small" id="ed-dup">Copy</button>
+          <button class="btn small warn" id="ed-del">Delete</button>
+        </span>
+        <span id="ed-spawn-props"><span class="dim">Spawn point</span> <button class="btn small warn" id="ed-del-spawn">Delete</button></span>
+        <span class="grow"></span>
+        <span class="dim" id="ed-count"></span>
+      </div>
+    </div>
+
+    <div id="loader"><div class="dots" id="loader-text">Connecting</div></div>
+    <div id="toast"></div>
+  </div>
+</div>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- small helpers
+
+const $ = id => document.getElementById(id);
+const rand = (a, b) => a + Math.random() * (b - a);
+const irand = (a, b) => Math.floor(rand(a, b + 1));
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const chance = p => Math.random() < p;
+const wrapAngle = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Saved stuff lives in localStorage. Wrapped because private windows can throw.
+const store = {
+  get(k, def) {
+    try { const v = localStorage.getItem('bopp_' + k); return v === null ? def : JSON.parse(v); }
+    catch (e) { return def; }
+  },
+  set(k, v) { try { localStorage.setItem('bopp_' + k, JSON.stringify(v)); } catch (e) {} }
+};
+
+const settings = Object.assign({ volume: 70, chat: 1, names: 1, shake: 1, fps: 0 }, store.get('settings', {}));
+const saveSettings = () => store.set('settings', settings);
+
+const profile = Object.assign({ name: '', xp: 0, skin: null }, store.get('profile', {}));
+const saveProfile = () => store.set('profile', profile);
+
+function levelFromXp(xp) {
+  // each level needs a bit more than the last
+  let lv = 1, need = 100;
+  while (xp >= need) { xp -= need; lv++; need = Math.round(need * 1.12); }
+  return { level: lv, into: xp, need };
+}
+
+// ---------------------------------------------------------------- sound
+// Everything is synthesized with WebAudio, so there are no sound files.
+
+const Sound = (() => {
+  let ctx = null, master = null, noiseBuf = null;
+
+  function init() {
+    if (ctx) return;
+    try {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      master = ctx.createGain();
+      master.connect(ctx.destination);
+      setVolume();
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e) { ctx = null; }
+  }
+  function setVolume() { if (master) master.gain.value = (settings.volume / 100) * 0.6; }
+
+  function tone(type, f0, f1, dur, vol, delay = 0) {
+    if (!ctx) return;
+    const t = ctx.currentTime + delay;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(master);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+
+  function noise(dur, vol, freq, q, type = 'bandpass', delay = 0, sweepTo = 0) {
+    if (!ctx) return;
+    const t = ctx.currentTime + delay;
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = noiseBuf;
+    f.type = type;
+    f.frequency.setValueAtTime(freq, t);
+    if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t + dur);
+    f.Q.value = q;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f).connect(g).connect(master);
+    s.start(t, Math.random() * 0.5);
+    s.stop(t + dur + 0.02);
+  }
+
+  let lastBump = 0;
+  return {
+    init, setVolume,
+    bump(power) {
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      if (now - lastBump < 0.03) return;
+      lastBump = now;
+      const v = clamp(power, 0.05, 1);
+      tone('sine', 190 + 120 * v, 70, 0.14 + 0.06 * v, 0.5 * v);
+      noise(0.07, 0.25 * v, 900, 0.9);
+    },
+    thud(power) {
+      const v = clamp(power, 0.03, 0.6);
+      tone('sine', 120, 55, 0.12, 0.35 * v);
+    },
+    pop() {
+      tone('triangle', 520, 90, 0.28, 0.35);
+      noise(0.35, 0.4, 1800, 0.7, 'bandpass', 0, 200);
+      tone('sine', 90, 40, 0.4, 0.4);
+    },
+    shoot(power) {
+      tone('triangle', 260 + 200 * power, 160, 0.12, 0.25);
+      noise(0.16, 0.18, 2500, 1.2, 'bandpass', 0, 900);
+    },
+    thunk() { tone('square', 140, 80, 0.06, 0.12); noise(0.05, 0.15, 600, 1); },
+    draw() { noise(0.12, 0.06, 1200, 3, 'bandpass', 0, 2400); },
+    grapple() { noise(0.18, 0.2, 800, 2, 'bandpass', 0, 4000); tone('sine', 400, 900, 0.12, 0.1); },
+    whoosh() { noise(0.25, 0.08, 500, 1, 'lowpass'); },
+    count(last) { tone('sine', last ? 880 : 520, last ? 880 : 520, last ? 0.35 : 0.16, 0.35); },
+    win() {
+      [523, 659, 784, 1046].forEach((f, i) => tone('triangle', f, f, 0.35, 0.25, i * 0.09));
+    },
+    goal() {
+      noise(1.2, 0.25, 900, 0.5, 'bandpass', 0, 1600);
+      [392, 523, 659].forEach((f, i) => tone('square', f, f, 0.3, 0.08, 0.1 + i * 0.1));
+    },
+    click() { tone('sine', 900, 600, 0.05, 0.12); },
+    blip() { tone('sine', 1250, 1250, 0.05, 0.06); },
+    join() { tone('sine', 660, 660, 0.08, 0.1); tone('sine', 880, 880, 0.1, 0.1, 0.08); },
+    leave() { tone('sine', 660, 660, 0.08, 0.08); tone('sine', 440, 440, 0.12, 0.08, 0.08); }
+  };
+})();
+
+// ---------------------------------------------------------------- names, chat, rooms
+// The other "players" are bots. These pools make them look like the usual crowd.
+
+const NAME_A = ['mega', 'tiny', 'super', 'lil', 'big', 'sir', 'captain', 'dr', 'its', 'not', 'the', 'just', 'mr', 'ms', 'king', 'queen', 'lord', 'agent', 'cool', 'sad', 'happy', 'sleepy', 'angry', 'silly', 'shy', 'fast', 'slow'];
+const NAME_B = ['potato', 'pickle', 'noodle', 'bean', 'toast', 'waffle', 'mochi', 'kiwi', 'mango', 'taco', 'nugget', 'pancake', 'cookie', 'pebble', 'comet', 'nova', 'pixel', 'blob', 'ghost', 'ninja', 'panda', 'otter', 'fox', 'duck', 'frog', 'llama', 'cactus', 'rocket', 'bubble', 'cloud', 'storm', 'shadow', 'bonbon', 'gecko', 'raccoon', 'walrus', 'goose', 'tofu', 'muffin', 'yeti'];
+const NAME_SOLO = ['Zephyr', 'Kairo', 'Vex', 'Nyx', 'Juno', 'Echo', 'Orbit', 'Quill', 'Ember', 'Sora', 'Rook', 'Milo', 'Luna', 'Atlas', 'Pip', 'Bix', 'Fizz', 'Dot', 'Zuko', 'Remy', 'Tilly', 'Wren', 'Koda', 'Ash', 'Indigo', 'Yuki', 'Rex', 'Ollie', 'Nemo', 'Sunny'];
+const NAME_STYLES = [
+  () => pick(NAME_A) + '_' + pick(NAME_B),
+  () => pick(NAME_B) + irand(1, 999),
+  () => pick(NAME_SOLO),
+  () => pick(NAME_SOLO) + pick(['', '_', '.']) + irand(2, 99),
+  () => 'xX' + cap(pick(NAME_B)) + 'Xx',
+  () => cap(pick(NAME_A)) + cap(pick(NAME_B)),
+  () => pick(NAME_B) + pick(['_gg', '_yt', 'lord', 'man', 'boi', 'z', 'xd', '_ttv', 'pro']),
+  () => 'Guest' + irand(1000, 99999),
+  () => pick(NAME_SOLO).toLowerCase() + pick(['', '', '_']) + pick(NAME_B),
+  () => pick(NAME_B).toUpperCase(),
+];
+function cap(s) { return s[0].toUpperCase() + s.slice(1); }
+function botName(taken) {
+  for (let i = 0; i < 40; i++) {
+    let n = pick(NAME_STYLES)();
+    if (n.length > 15) n = n.slice(0, 15);
+    if (!taken || !taken.has(n.toLowerCase())) return n;
+  }
+  return 'player' + irand(100, 9999);
+}
+function botLevel() {
+  const r = Math.random();
+  if (r < 0.15) return 1;
+  if (r < 0.55) return irand(2, 15);
+  if (r < 0.85) return irand(16, 40);
+  return irand(41, 99);
+}
+
+const CHAT = {
+  hello: ['hi', 'hello', 'hey', 'yo', 'hii', 'hey guys', 'sup', 'hello everyone', 'o/', 'heyy'],
+  waiting: ['start pls', 'can we start', 'ready', 'go go', 'lets go', 'waiting...', 'start?', 'host start', 'r', 'im ready'],
+  gg: ['gg', 'gg', 'gg wp', 'GG', 'ggs', 'gg!', 'wp', 'good game', 'gg ez', 'one more'],
+  roundWin: ['lets gooo', 'yes!', 'ez', 'haha', 'got em', 'nice', ':D', 'clutch'],
+  died: ['noo', 'rip', 'nooo', 'how', 'bruh', 'lag', 'oops', 'unlucky', 'why', 'wow', ':(', 'not fair'],
+  hit: ['lol', 'haha', 'sorry', 'oops', 'nice shot', 'wow', 'xd', 'lmao'],
+  chatter: ['lol', 'this map is fun', 'anyone 1v1 after', 'i keep falling', 'brb', 'back', 'nice', 'ok', 'same', 'true', 'what mode next', 'arrows next?', 'can we do grapple', 'football pls', 'death arrows!!', 'im so bad at this', 'my wifi is bad', 'xd', 'how do u go heavy', 'press x', 'hold x to be heavy', 'pog', 'ty', 'np', 'wow', 'who is winning', 'gl everyone', 'gl hf'],
+  modeAsk: { arrows: 'arrows?', deatharrows: 'death arrows pls', grapple: 'grapple!', vtol: 'vtol anyone', football: 'football?', classic: 'classic is best', simple: 'simple mode?' },
+  welcome: ['welcome', 'hi {n}', 'hey {n}', 'wb', 'hello {n}', 'yo {n}']
+};
+
+const ROOM_NAMES = [
+  'chill classic', 'quick games', 'arrows only', 'death arrows ffa', 'come play', '1v1 me', 'no teaming pls', 'grapple party', 'vtol dogfights',
+  'football 2v2', 'football 3v3', 'friendly games', 'noobs welcome', 'pros only', 'fun maps', 'just vibing', 'school break games',
+  'random maps', 'classic ffa', 'DA 1v1', 'arrows practice', 'lets play', 'team games', 'red vs blue', 'big brain plays', 'casual lobby',
+  'learn to play', 'sunday games', 'bopp bopp bopp', 'last one standing', 'nice people only', 'heavy hitters', 'speed rounds'
+];
+</script>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- modes
+
+const MODES = {
+  classic:     { name: 'Classic',      heavy: true,  special: null,      blurb: 'Push and go heavy. Last ball rolling wins.' },
+  simple:      { name: 'Simple',       heavy: false, special: null,      blurb: 'No heavy. Just you and your momentum.' },
+  arrows:      { name: 'Arrows',       heavy: true,  special: 'bow',     blurb: 'Hold Z to draw, arrows knock people back.' },
+  deatharrows: { name: 'Death Arrows', heavy: true,  special: 'bow',     lethal: true, blurb: 'One arrow, one out. Including yours.' },
+  grapple:     { name: 'Grapple',      heavy: true,  special: 'grapple', blurb: 'Hold Z to hook onto anything nearby.' },
+  vtol:        { name: 'VTOL',         heavy: true,  special: 'vtol',    blurb: 'Turn with left/right, thrust with up.' },
+  football:    { name: 'Football',     heavy: true,  special: null,      teams: true, ball: true, blurb: 'Get the ball in the other goal.' }
+};
+const MODE_KEYS = Object.keys(MODES);
+
+// ---------------------------------------------------------------- maps
+// The stage is 1000 x 650. Shapes: R = rotated rectangle (centre, size), C = circle, P = convex polygon.
+// Extra flags: death, bounce (restitution), fric, nograpple, move {dx, dy, period, phase}, spin (rad/s), color.
+
+const COL = {
+  plat: '#dfe4f5', plat2: '#c5cdea', plat3: '#a9b5e2', dark: '#7f8bc4',
+  death: '#ff5d6c', bounce: '#7fe3b4', ice: '#b4e7ff', wood: '#e2c49c', grass: '#9de08a'
+};
+
+function R(x, y, w, h, o = {}) { return Object.assign({ t: 'rect', x, y, w, h, a: 0 }, o); }
+function C(x, y, r, o = {}) { return Object.assign({ t: 'circle', x, y, r }, o); }
+function P(x, y, pts, o = {}) { return Object.assign({ t: 'poly', x, y, pts, a: 0 }, o); }
+const DEATH = { death: true, color: COL.death };
+const BOUNCY = { bounce: 1.1, color: COL.bounce };
+
+function row(n, x0, x1, y) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push([lerp(x0, x1, n === 1 ? 0.5 : i / (n - 1)), y]);
+  return out;
+}
+
+const MAPS = [
+  {
+    name: 'Plain Jane', by: 'kiwi77', modes: ['classic', 'simple', 'arrows', 'deatharrows', 'grapple'],
+    shapes: [R(500, 470, 640, 44)],
+    spawns: row(8, 220, 780, 420)
+  },
+  {
+    name: 'Three Steps', by: 'Zephyr', modes: ['classic', 'simple', 'arrows', 'deatharrows'],
+    shapes: [R(225, 470, 270, 40), R(500, 380, 180, 30, { color: COL.plat2 }), R(775, 470, 270, 40)],
+    spawns: [[130, 420], [220, 420], [310, 420], [450, 330], [550, 330], [690, 420], [780, 420], [870, 420]]
+  },
+  {
+    name: 'Bowl', by: 'mochi', modes: ['classic', 'simple', 'grapple'],
+    shapes: [R(330, 440, 300, 30, { a: 0.26 }), R(670, 440, 300, 30, { a: -0.26 }), R(500, 482, 120, 30, { color: COL.plat2 })],
+    spawns: [[220, 380], [280, 395], [350, 412], [460, 435], [540, 435], [650, 412], [720, 395], [780, 380]]
+  },
+  {
+    name: 'Lava Gap', by: 'Nyx', modes: ['classic', 'simple', 'arrows', 'deatharrows', 'grapple'],
+    shapes: [R(190, 450, 300, 40), R(810, 450, 300, 40), R(500, 585, 640, 40, DEATH), R(500, 330, 150, 24, { color: COL.plat2 })],
+    spawns: [[90, 400], [160, 400], [230, 400], [300, 400], [700, 400], [770, 400], [840, 400], [910, 400]]
+  },
+  {
+    name: 'Spinner', by: 'captain_toast', modes: ['classic', 'simple', 'grapple'],
+    shapes: [R(500, 420, 560, 24, { spin: 0.5, color: COL.plat2 }), C(500, 420, 34, { color: COL.dark }),
+      R(130, 530, 160, 26), R(870, 530, 160, 26)],
+    spawns: [[90, 490], [170, 490], [830, 490], [910, 490], [500, 370], [330, 380], [670, 380], [500, 300]]
+  },
+  {
+    name: 'Lifts', by: 'otter_gg', modes: ['classic', 'simple', 'arrows', 'deatharrows'],
+    shapes: [R(240, 470, 210, 30, { move: { dx: 0, dy: -140, period: 5 } }), R(760, 470, 210, 30, { move: { dx: 0, dy: -140, period: 5, phase: 0.5 } }),
+      R(500, 420, 150, 30, { color: COL.plat2 }), R(500, 600, 900, 30, DEATH)],
+    spawns: [[170, 420], [240, 420], [310, 420], [460, 370], [540, 370], [690, 420], [760, 420], [830, 420]]
+  },
+  {
+    name: 'Orbs', by: 'pebble202', modes: ['classic', 'simple', 'grapple'],
+    shapes: [C(215, 520, 105), C(500, 590, 140, { color: COL.plat2 }), C(785, 520, 105),
+      R(215, 420, 90, 16, { color: COL.plat3 }), R(500, 455, 110, 18, { color: COL.plat3 }), R(785, 420, 90, 16, { color: COL.plat3 })],
+    spawns: [[190, 388], [240, 388], [470, 422], [530, 422], [760, 388], [810, 388], [215, 300], [785, 300]]
+  },
+  {
+    name: 'Trampolines', by: 'Bix', modes: ['classic', 'simple'],
+    shapes: [R(500, 470, 420, 36), R(165, 530, 150, 24, BOUNCY), R(835, 530, 150, 24, BOUNCY), R(500, 300, 120, 20, { color: COL.plat2 })],
+    spawns: row(6, 330, 670, 420).concat([[165, 480], [835, 480]])
+  },
+  {
+    name: 'Ice Rink', by: 'Yuki', modes: ['classic', 'simple', 'deatharrows'],
+    shapes: [R(500, 470, 680, 40, { fric: 0.01, color: COL.ice }), C(500, 450, 26, { color: COL.plat3 })],
+    spawns: row(8, 210, 790, 420)
+  },
+  {
+    name: 'Two Towers', by: 'Juno', modes: ['arrows', 'deatharrows', 'grapple'],
+    shapes: [R(160, 330, 180, 30), R(160, 490, 56, 290, { color: COL.plat3 }), R(840, 330, 180, 30), R(840, 490, 56, 290, { color: COL.plat3 }),
+      R(500, 520, 300, 34), R(500, 390, 110, 20, { color: COL.plat2 })],
+    spawns: [[110, 290], [170, 290], [210, 290], [830, 290], [790, 290], [890, 290], [440, 470], [560, 470]]
+  },
+  {
+    name: 'Cliffs', by: 'Rook', modes: ['arrows', 'deatharrows', 'grapple'],
+    shapes: [R(130, 300, 180, 26), R(330, 430, 190, 26), R(565, 330, 160, 26, { color: COL.plat2 }), R(790, 455, 210, 26), R(890, 255, 140, 24, { color: COL.plat2 })],
+    spawns: [[90, 260], [160, 260], [300, 390], [370, 390], [565, 290], [760, 415], [830, 415], [890, 215]]
+  },
+  {
+    name: 'Bunkers', by: 'Ember', modes: ['arrows', 'deatharrows', 'classic', 'simple'],
+    shapes: [R(500, 480, 740, 40), C(330, 462, 22, { color: COL.plat3 }), C(670, 462, 22, { color: COL.plat3 }), R(500, 330, 200, 22, { color: COL.plat2 })],
+    spawns: [[170, 430], [240, 430], [400, 430], [460, 430], [540, 430], [600, 430], [760, 430], [830, 430]]
+  },
+  {
+    name: 'Hang Time', by: 'lil_noodle', modes: ['grapple'],
+    shapes: [R(180, 520, 150, 26), R(820, 520, 150, 26), R(500, 565, 130, 26),
+      R(250, 110, 130, 40, { color: COL.plat3 }), R(500, 80, 190, 40, { color: COL.plat3 }), R(750, 110, 130, 40, { color: COL.plat3 }),
+      C(370, 260, 28, { color: COL.dark }), C(630, 260, 28, { color: COL.dark }), R(500, 650, 1100, 30, DEATH)],
+    spawns: [[140, 480], [190, 480], [230, 480], [470, 525], [530, 525], [780, 480], [820, 480], [860, 480]]
+  },
+  {
+    name: 'Chandelier', by: 'Indigo', modes: ['grapple', 'arrows'],
+    shapes: [R(500, 50, 640, 28, { color: COL.plat3 }), C(300, 180, 22, { color: COL.dark }), C(500, 200, 22, { color: COL.dark }), C(700, 180, 22, { color: COL.dark }),
+      R(250, 470, 200, 30), R(750, 470, 200, 30), R(500, 400, 130, 22, { color: COL.plat2 }), R(500, 640, 1100, 30, DEATH)],
+    spawns: [[180, 420], [240, 420], [300, 420], [700, 420], [760, 420], [820, 420], [470, 360], [530, 360]]
+  },
+  {
+    name: 'Open Sky', by: 'Atlas', modes: ['vtol'],
+    shapes: [C(250, 300, 52, { color: COL.plat3 }), C(750, 300, 52, { color: COL.plat3 }), R(500, 430, 200, 30), R(500, 160, 120, 24, { color: COL.plat2 }),
+      R(500, 640, 1200, 30, DEATH), R(-30, 325, 30, 700, DEATH), R(1030, 325, 30, 700, DEATH), R(500, 5, 1100, 20, DEATH)],
+    spawns: [[150, 200], [850, 200], [150, 450], [850, 450], [350, 140], [650, 140], [400, 520], [600, 520]]
+  },
+  {
+    name: 'Canyon', by: 'Remy', modes: ['vtol'],
+    shapes: [P(0, 650, [[0, 0], [260, 0], [200, -230], [0, -300]], { color: COL.plat3 }), P(1000, 650, [[0, 0], [0, -300], [-200, -230], [-260, 0]], { color: COL.plat3 }),
+      R(500, 330, 60, 200, { color: COL.plat2 }), C(500, 220, 30, DEATH), R(500, 645, 600, 30, DEATH), R(500, 5, 1100, 20, DEATH),
+      R(-30, 325, 30, 700, DEATH), R(1030, 325, 30, 700, DEATH)],
+    spawns: [[120, 250], [880, 250], [250, 150], [750, 150], [330, 450], [670, 450], [150, 120], [850, 120]]
+  },
+  {
+    name: 'Stadium', by: 'Ollie', modes: ['football'], football: true,
+    shapes: [R(500, 628, 1000, 44, { color: COL.grass }), R(500, 8, 1000, 30, { color: COL.plat3 }),
+      R(52, 200, 24, 384, { color: COL.plat3 }), R(948, 200, 24, 384, { color: COL.plat3 }),
+      R(6, 500, 12, 240, { color: COL.plat3 }), R(994, 500, 12, 240, { color: COL.plat3 }),
+      R(30, 396, 70, 12, { color: '#ffffff' }), R(970, 396, 70, 12, { color: '#ffffff' })],
+    goals: [{ team: 'red', x: 12, y: 404, w: 30, h: 202 }, { team: 'blue', x: 958, y: 404, w: 30, h: 202 }],
+    ball: [500, 330],
+    spawns: [[200, 560, 'red'], [300, 560, 'red'], [400, 560, 'red'], [250, 480, 'red'], [800, 560, 'blue'], [700, 560, 'blue'], [600, 560, 'blue'], [750, 480, 'blue']]
+  },
+  {
+    name: 'Bumpy Pitch', by: 'Sunny', modes: ['football'], football: true,
+    shapes: [R(500, 628, 1000, 44, { color: COL.grass }), R(500, 8, 1000, 30, { color: COL.plat3 }), C(500, 640, 70, { color: COL.grass }),
+      R(52, 200, 24, 384, { color: COL.plat3 }), R(948, 200, 24, 384, { color: COL.plat3 }),
+      R(6, 500, 12, 240, { color: COL.plat3 }), R(994, 500, 12, 240, { color: COL.plat3 }),
+      R(30, 396, 70, 12, { color: '#ffffff' }), R(970, 396, 70, 12, { color: '#ffffff' }),
+      R(300, 300, 120, 16, { color: COL.plat2 }), R(700, 300, 120, 16, { color: COL.plat2 })],
+    goals: [{ team: 'red', x: 12, y: 404, w: 30, h: 202 }, { team: 'blue', x: 958, y: 404, w: 30, h: 202 }],
+    ball: [500, 547],
+    spawns: [[200, 560, 'red'], [330, 560, 'red'], [290, 250, 'red'], [150, 480, 'red'], [800, 560, 'blue'], [670, 560, 'blue'], [710, 250, 'blue'], [850, 480, 'blue']]
+  }
+];
+
+// the part of the stage worth showing: everything solid plus spawns, with some room around it
+function mapView(map) {
+  if (map._view) return map._view;
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  const grow = (a, b, c, d) => { x0 = Math.min(x0, a); y0 = Math.min(y0, b); x1 = Math.max(x1, c); y1 = Math.max(y1, d); };
+  for (const s of map.shapes) {
+    const r = s.t === 'circle' ? s.r : Math.hypot(s.w || 0, s.h || 0) / 2 || 60;
+    let ex = Math.abs((s.move && s.move.dx) || 0), ey = Math.abs((s.move && s.move.dy) || 0);
+    if (s.spin) ex = ey = 0;
+    const a = s.t === 'rect' && !s.spin ? Math.abs(s.a || 0) : 1;
+    const hw = s.t === 'rect' && a < 0.05 ? s.w / 2 : r, hh = s.t === 'rect' && a < 0.05 ? s.h / 2 : r;
+    if (s.t === 'poly') { grow(s.x - 300, s.y - 320, s.x + 300, s.y + 20); continue; }
+    grow(s.x - hw - (s.move && s.move.dx < 0 ? ex : 0), s.y - hh - (s.move && s.move.dy < 0 ? ey : 0),
+         s.x + hw + (s.move && s.move.dx > 0 ? ex : 0), s.y + hh + (s.move && s.move.dy > 0 ? ey : 0));
+  }
+  for (const sp of map.spawns) grow(sp[0] - 20, sp[1] - 20, sp[0] + 20, sp[1] + 20);
+  x0 = Math.max(x0 - 70, -40); x1 = Math.min(x1 + 70, 1040);
+  y0 = Math.max(y0 - 120, -40); y1 = Math.min(y1 + 50, 715);
+  let w = x1 - x0, h = y1 - y0;
+  if (w < 660) { x0 -= (660 - w) / 2; w = 660; }
+  if (h < 430) { y0 -= (430 - h) * 0.7; h = 430; }
+  map._view = { x: x0, y: y0, w, h };
+  return map._view;
+}
+
+// mine = also offer maps made in the editor (only when you're the one picking)
+function mapsFor(mode, mine = false) {
+  const list = MAPS.filter(m => m.modes.includes(mode) && (mine || !m.custom));
+  return list.length ? list : MAPS.filter(m => !m.football && !m.custom);
+}
+
+// ---------------------------------------------------------------- your maps
+
+const CUSTOM_MODES = ['classic', 'simple', 'arrows', 'deatharrows', 'grapple', 'vtol'];
+
+function customMap(saved) {
+  return { name: saved.name, by: saved.by, custom: true, id: saved.id, modes: CUSTOM_MODES, shapes: saved.shapes, spawns: saved.spawns };
+}
+
+function loadCustomMaps() {
+  for (const saved of store.get('maps', [])) MAPS.push(customMap(saved));
+}
+
+// put a saved map into MAPS (replacing the old copy) and return its index
+function installCustomMap(saved) {
+  const i = MAPS.findIndex(m => m.custom && m.id === saved.id);
+  if (i >= 0) { MAPS[i] = customMap(saved); return i; }
+  MAPS.push(customMap(saved));
+  return MAPS.length - 1;
+}
+</script>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- physics
+// A small custom 2D engine: dynamic circles against static/moving convex shapes.
+// Fixed 60 Hz steps split into substeps so fast balls don't tunnel through thin platforms.
+
+const PHYS = {
+  gravity: 1050,
+  step: 1 / 60,
+  sub: 3,
+  playerRadius: 16,
+  move: 1150,        // left/right push (px/s^2 at normal weight)
+  up: 600,           // up only slows the fall a bit
+  down: 900,
+  heavyMass: 3,
+  damping: 0.12,
+  playerBounce: 0.75,
+  wallBounce: 0.35,
+  friction: 0.08,
+};
+
+class Shape {
+  constructor(def) {
+    Object.assign(this, def);
+    this.x0 = def.x; this.y0 = def.y; this.a0 = def.a || 0;
+    this.a = this.a0;
+    this.vx = this.vy = this.av = 0;
+    this.px = this.x; this.py = this.y; this.pa = this.a;
+    this.moving = !!(def.move || def.spin);
+    if (this.t === 'rect') {
+      const hw = this.w / 2, hh = this.h / 2;
+      this.local = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]];
+    } else if (this.t === 'poly') {
+      this.local = this.pts.map(p => [p[0], p[1]]);
+    }
+    if (this.local) {
+      // centroid in local space, used for outward normals and the rotation centre of polys
+      let cx = 0, cy = 0;
+      for (const p of this.local) { cx += p[0]; cy += p[1]; }
+      this.lcx = cx / this.local.length; this.lcy = cy / this.local.length;
+      this.lnorm = [];
+      const n = this.local.length;
+      for (let i = 0; i < n; i++) {
+        const a = this.local[i], b = this.local[(i + 1) % n];
+        let nx = b[1] - a[1], ny = -(b[0] - a[0]);
+        const l = Math.hypot(nx, ny) || 1;
+        nx /= l; ny /= l;
+        const mx = (a[0] + b[0]) / 2 - this.lcx, my = (a[1] + b[1]) / 2 - this.lcy;
+        if (nx * mx + ny * my < 0) { nx = -nx; ny = -ny; }
+        this.lnorm.push([nx, ny]);
+      }
+      this.verts = this.local.map(() => [0, 0]);
+      this.norms = this.lnorm.map(() => [0, 0]);
+    }
+    this.place();
+  }
+
+  place() {
+    if (this.local) {
+      const c = Math.cos(this.a), s = Math.sin(this.a);
+      let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+      for (let i = 0; i < this.local.length; i++) {
+        const [lx, ly] = this.local[i];
+        const wx = this.x + lx * c - ly * s, wy = this.y + lx * s + ly * c;
+        this.verts[i][0] = wx; this.verts[i][1] = wy;
+        const [nx, ny] = this.lnorm[i];
+        this.norms[i][0] = nx * c - ny * s; this.norms[i][1] = nx * s + ny * c;
+        if (wx < minX) minX = wx; if (wx > maxX) maxX = wx;
+        if (wy < minY) minY = wy; if (wy > maxY) maxY = wy;
+      }
+      this.box = [minX, minY, maxX, maxY];
+      this.cx = this.x + this.lcx * c - this.lcy * s;
+      this.cy = this.y + this.lcx * s + this.lcy * c;
+    } else {
+      this.box = [this.x - this.r, this.y - this.r, this.x + this.r, this.y + this.r];
+      this.cx = this.x; this.cy = this.y;
+    }
+  }
+
+  update(t, h) {
+    if (!this.moving) return;
+    const ox = this.x, oy = this.y, oa = this.a;
+    if (this.move) {
+      const m = this.move;
+      const k = (1 - Math.cos(2 * Math.PI * (t / m.period + (m.phase || 0)))) / 2;
+      this.x = this.x0 + (m.dx || 0) * k;
+      this.y = this.y0 + (m.dy || 0) * k;
+    }
+    if (this.spin) this.a = this.a0 + this.spin * t;
+    this.vx = (this.x - ox) / h; this.vy = (this.y - oy) / h; this.av = (this.a - oa) / h;
+    this.place();
+  }
+
+  // velocity of the surface at a point (moving / spinning platforms carry you along)
+  velAt(px, py) {
+    if (!this.moving) return [0, 0];
+    return [this.vx - this.av * (py - this.cy), this.vy + this.av * (px - this.cx)];
+  }
+
+  // contact between this shape and a circle. returns null or {nx, ny, depth}
+  touch(px, py, r) {
+    const b = this.box;
+    if (px + r < b[0] || px - r > b[2] || py + r < b[1] || py - r > b[3]) return null;
+    if (this.t === 'circle') {
+      const dx = px - this.x, dy = py - this.y, d = Math.hypot(dx, dy);
+      if (d >= r + this.r) return null;
+      if (d < 1e-6) return { nx: 0, ny: -1, depth: r + this.r };
+      return { nx: dx / d, ny: dy / d, depth: r + this.r - d };
+    }
+    const v = this.verts, n = this.norms, cnt = v.length;
+    let inside = true, bestSep = -1e9, bestI = 0;
+    for (let i = 0; i < cnt; i++) {
+      const sep = (px - v[i][0]) * n[i][0] + (py - v[i][1]) * n[i][1];
+      if (sep > 0) inside = false;
+      if (sep > bestSep) { bestSep = sep; bestI = i; }
+    }
+    if (inside) return { nx: n[bestI][0], ny: n[bestI][1], depth: r - bestSep };
+    let bd = 1e9, bx = 0, by = 0;
+    for (let i = 0; i < cnt; i++) {
+      const a = v[i], c = v[(i + 1) % cnt];
+      const ex = c[0] - a[0], ey = c[1] - a[1];
+      const l2 = ex * ex + ey * ey;
+      let tt = l2 > 0 ? ((px - a[0]) * ex + (py - a[1]) * ey) / l2 : 0;
+      tt = tt < 0 ? 0 : tt > 1 ? 1 : tt;
+      const qx = a[0] + ex * tt, qy = a[1] + ey * tt;
+      const d2 = (px - qx) * (px - qx) + (py - qy) * (py - qy);
+      if (d2 < bd) { bd = d2; bx = qx; by = qy; }
+    }
+    const d = Math.sqrt(bd);
+    if (d >= r) return null;
+    return { nx: (px - bx) / d, ny: (py - by) / d, depth: r - d };
+  }
+
+  // closest point on the outline to (px, py)
+  closest(px, py) {
+    if (this.t === 'circle') {
+      const dx = px - this.x, dy = py - this.y, d = Math.hypot(dx, dy) || 1;
+      return [this.x + dx / d * this.r, this.y + dy / d * this.r];
+    }
+    const v = this.verts, cnt = v.length;
+    let bd = 1e18, out = [v[0][0], v[0][1]];
+    for (let i = 0; i < cnt; i++) {
+      const a = v[i], c = v[(i + 1) % cnt];
+      const ex = c[0] - a[0], ey = c[1] - a[1], l2 = ex * ex + ey * ey;
+      let tt = l2 > 0 ? ((px - a[0]) * ex + (py - a[1]) * ey) / l2 : 0;
+      tt = clamp(tt, 0, 1);
+      const qx = a[0] + ex * tt, qy = a[1] + ey * tt;
+      const d2 = (px - qx) ** 2 + (py - qy) ** 2;
+      if (d2 < bd) { bd = d2; out = [qx, qy]; }
+    }
+    return out;
+  }
+
+  // first hit along a segment, as a fraction 0..1, or -1
+  ray(x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    if (this.t === 'circle') {
+      const fx = x1 - this.x, fy = y1 - this.y;
+      const a = dx * dx + dy * dy, b = 2 * (fx * dx + fy * dy), c = fx * fx + fy * fy - this.r * this.r;
+      if (c < 0) return 0;
+      const disc = b * b - 4 * a * c;
+      if (disc < 0 || a === 0) return -1;
+      const t = (-b - Math.sqrt(disc)) / (2 * a);
+      return t >= 0 && t <= 1 ? t : -1;
+    }
+    const b = this.box;
+    if (Math.max(x1, x2) < b[0] || Math.min(x1, x2) > b[2] || Math.max(y1, y2) < b[1] || Math.min(y1, y2) > b[3]) return -1;
+    const v = this.verts, cnt = v.length;
+    let best = -1;
+    for (let i = 0; i < cnt; i++) {
+      const a = v[i], c = v[(i + 1) % cnt];
+      const ex = c[0] - a[0], ey = c[1] - a[1];
+      const den = dx * ey - dy * ex;
+      if (Math.abs(den) < 1e-9) continue;
+      const t = ((a[0] - x1) * ey - (a[1] - y1) * ex) / den;
+      const u = ((a[0] - x1) * dy - (a[1] - y1) * dx) / den;
+      if (t >= 0 && t <= 1 && u >= 0 && u <= 1 && (best < 0 || t < best)) best = t;
+    }
+    if (best < 0) {
+      // starting inside counts as an immediate hit
+      let inside = true;
+      for (let i = 0; i < cnt; i++)
+        if ((x1 - v[i][0]) * this.norms[i][0] + (y1 - v[i][1]) * this.norms[i][1] > 0) { inside = false; break; }
+      if (inside) return 0;
+    }
+    return best;
+  }
+}
+
+class Body {
+  constructor(x, y, r, mass, kind) {
+    this.x = x; this.y = y; this.px = x; this.py = y;
+    this.vx = 0; this.vy = 0;
+    this.r = r;
+    this.baseMass = mass;
+    this.setMass(mass);
+    this.kind = kind;
+    this.angle = 0; this.pangle = 0; this.av = 0;
+    this.ax = 0; this.ay = 0;
+    this.bounce = PHYS.wallBounce;
+    this.grounded = 0;
+    this.groundNx = 0; this.groundNy = -1;
+    this.frozen = false;
+    this.dead = false;
+    this.lastHitBy = null;
+    this.lastHitTime = -10;
+  }
+  setMass(m) { this.m = m; this.im = 1 / m; }
+}
+
+class World {
+  constructor(map) {
+    this.map = map;
+    this.shapes = map.shapes.map(s => new Shape(s));
+    this.bodies = [];
+    this.t = 0;
+    this.events = [];   // collisions and deaths for sound/effects, cleared by the game each step
+  }
+
+  add(body) { this.bodies.push(body); return body; }
+  remove(body) { const i = this.bodies.indexOf(body); if (i >= 0) this.bodies.splice(i, 1); }
+
+  step() {
+    const h = PHYS.step / PHYS.sub;
+    for (const b of this.bodies) { b.px = b.x; b.py = b.y; b.pangle = b.angle; }
+    for (const s of this.shapes) { s.px = s.x; s.py = s.y; s.pa = s.a; }
+    for (let k = 0; k < PHYS.sub; k++) {
+      this.t += h;
+      for (const s of this.shapes) s.update(this.t, h);
+      for (const b of this.bodies) {
+        b.grounded = Math.max(0, b.grounded - 1);
+        if (b.frozen || b.dead) continue;
+        b.vx += b.ax * h;
+        b.vy += (PHYS.gravity * (b.gravityScale == null ? 1 : b.gravityScale) + b.ay) * h;
+        const damp = 1 - (b.damping == null ? PHYS.damping : b.damping) * h;
+        b.vx *= damp; b.vy *= damp;
+        b.x += b.vx * h; b.y += b.vy * h;
+        b.angle += b.av * h;
+        this.collideShapes(b, h);
+      }
+      this.collideBodies();
+    }
+  }
+
+  collideShapes(b, h) {
+    for (const s of this.shapes) {
+      if (s.nophys) continue;
+      const c = s.touch(b.x, b.y, b.r);
+      if (!c) continue;
+      if (s.death && b.kind === 'player') { this.events.push({ type: 'death', body: b, shape: s }); b.dead = true; return; }
+      b.x += c.nx * c.depth; b.y += c.ny * c.depth;
+      const [svx, svy] = s.velAt(b.x - c.nx * b.r, b.y - c.ny * b.r);
+      const rvx = b.vx - svx, rvy = b.vy - svy;
+      const vn = rvx * c.nx + rvy * c.ny;
+      if (c.ny < -0.5) { b.grounded = 6; b.groundNx = c.nx; b.groundNy = c.ny; }
+      if (vn < 0) {
+        let e = s.bounce != null ? s.bounce : b.bounce;
+        if (vn > -40 && !s.bounce) e = 0;
+        const jn = -(1 + e) * vn;
+        b.vx += c.nx * jn; b.vy += c.ny * jn;
+        const tx = rvx - c.nx * vn, ty = rvy - c.ny * vn, tl = Math.hypot(tx, ty);
+        if (tl > 1e-6) {
+          const mu = s.fric != null ? s.fric : PHYS.friction;
+          const dv = Math.min(tl, mu * jn);
+          b.vx -= tx / tl * dv; b.vy -= ty / tl * dv;
+        }
+        if (jn > 140) this.events.push({ type: 'wall', body: b, power: jn, x: b.x - c.nx * b.r, y: b.y - c.ny * b.r });
+      }
+      // rolling: spin to match the surface
+      if (!b.noRoll) {
+        const tdx = -c.ny, tdy = c.nx;
+        const along = (b.vx - svx) * tdx + (b.vy - svy) * tdy;
+        b.av += (along / b.r - b.av) * 0.35;
+      }
+    }
+  }
+
+  collideBodies() {
+    const list = this.bodies;
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      if (a.dead || a.ghost) continue;
+      for (let j = i + 1; j < list.length; j++) {
+        const b = list[j];
+        if (b.dead || b.ghost) continue;
+        if (a.frozen && b.frozen) continue;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const rr = a.r + b.r;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= rr * rr) continue;
+        const d = Math.sqrt(d2) || 0.001;
+        const nx = dx / d, ny = dy / d;
+        const ia = a.frozen ? 0 : a.im, ib = b.frozen ? 0 : b.im;
+        const sum = ia + ib;
+        if (sum === 0) continue;
+        const over = rr - d;
+        a.x -= nx * over * ia / sum; a.y -= ny * over * ia / sum;
+        b.x += nx * over * ib / sum; b.y += ny * over * ib / sum;
+        const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (vn < 0) {
+          const e = (a.kind === 'ball' || b.kind === 'ball') ? 0.7 : PHYS.playerBounce;
+          const j = -(1 + e) * vn / sum;
+          a.vx -= nx * j * ia; a.vy -= ny * j * ia;
+          b.vx += nx * j * ib; b.vy += ny * j * ib;
+          this.events.push({ type: 'hit', a, b, power: -vn, x: a.x + nx * a.r, y: a.y + ny * a.r });
+        }
+      }
+    }
+  }
+
+  // nearest shape hit along a segment. filter(shape) can skip shapes
+  ray(x1, y1, x2, y2, filter) {
+    let best = null;
+    for (const s of this.shapes) {
+      if (s.nophys || (filter && !filter(s))) continue;
+      const t = s.ray(x1, y1, x2, y2);
+      if (t >= 0 && (!best || t < best.t)) best = { t, shape: s, x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t };
+    }
+    return best;
+  }
+}
+</script>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- one match (several rounds) in a room
+
+const BOW = { minSpeed: 280, maxSpeed: 1330, chargeTime: 1.0, aimSpeed: 2.7, cooldown: 0.25, gravity: 0.9, knock: 0.5 };
+const ROPE = { range: 290, pull: 13, maxPull: 2100, damping: 2.2 };
+const JET = { thrust: 1900, reverse: 600, turn: 3.7, damping: 0.55 };
+const ROUND_LIMIT = 90;
+
+class Match {
+  constructor(room, hooks) {
+    this.room = room;
+    this.hooks = hooks || {};
+    this.mode = room.mode;
+    this.rules = MODES[room.mode];
+    this.map = MAPS[room.map];
+    this.teams = this.rules.teams ? true : !!room.teams;
+    this.roundsToWin = room.rounds;
+    this.players = room.players.map(info => ({
+      info, wins: 0, alive: false, body: null,
+      team: this.teams ? (info.team || 'red') : null,
+      input: { left: false, right: false, up: false, down: false, heavy: false, special: false },
+      aiming: false, aim: -0.6, charge: 0, cooldown: 0, facing: 1,
+      grapple: null, grappleLock: false, thrusting: false,
+      bot: null
+    }));
+    if (this.teams) this.balanceTeams();
+    for (const p of this.players) if (p.info.isBot) p.bot = new Bot(p, this);
+    this.teamWins = { red: 0, blue: 0 };
+    this.round = 0;
+    this.arrows = [];
+    this.fx = [];
+    this.texts = [];
+    this.shake = 0;
+    this.time = 0;
+    this.state = 'countdown';
+    this.stateTime = 0;
+    this.banner = null;
+    this.over = false;
+    this.startRound();
+  }
+
+  balanceTeams() {
+    const reds = this.players.filter(p => p.team === 'red').length;
+    const blues = this.players.filter(p => p.team === 'blue').length;
+    // only fix it if one side is empty, otherwise respect what people picked
+    if (reds === 0 || blues === 0) shuffle(this.players.slice()).forEach((p, i) => p.team = i % 2 ? 'blue' : 'red');
+  }
+
+  get me() { return this.players.find(p => p.info.isMe); }
+
+  startRound(afterGoal) {
+    this.world = new World(this.map);
+    this.arrows = [];
+    if (!afterGoal) this.round++;
+    this.roundTime = 0;
+    this.hurried = false;
+    this.spots = findStandSpots(this.world);
+    const spawns = this.map.spawns.slice();
+    const free = shuffle(spawns.filter(s => !s[2]));
+    const byTeam = { red: shuffle(spawns.filter(s => s[2] === 'red')), blue: shuffle(spawns.filter(s => s[2] === 'blue')) };
+    let extra = 0;
+    for (const p of this.players) {
+      let s = null;
+      if (p.team && byTeam[p.team] && byTeam[p.team].length) s = byTeam[p.team].shift();
+      else if (free.length) s = free.shift();
+      if (!s) {
+        // more players than spawn points: double up next to an existing one
+        const n = spawns.length;
+        s = n ? [spawns[extra % n][0] + (Math.floor(extra / n) % 2 ? 36 : -36), spawns[extra % n][1] - 10] : [500 + (extra % 5 - 2) * 40, 150];
+        extra++;
+      }
+      const b = new Body(s[0] + rand(-4, 4), s[1], PHYS.playerRadius, 1, 'player');
+      b.owner = p;
+      b.frozen = true;
+      if (this.mode === 'vtol') { b.noRoll = true; b.damping = JET.damping; b.angle = 0; }
+      this.world.add(b);
+      p.body = b; p.alive = true;
+      p.aiming = false; p.charge = 0; p.cooldown = 0; p.grapple = null; p.grappleLock = false;
+      p.facing = s[0] < 500 ? 1 : -1;
+      if (p.bot) p.bot.reset();
+    }
+    if (this.rules.ball) {
+      const [bx, by] = this.map.ball;
+      this.ball = this.world.add(new Body(bx, by, 22, 0.6, 'ball'));
+      this.ball.bounce = 0.7;
+      this.ball.damping = 0.15;
+      this.ball.frozen = true;
+    } else this.ball = null;
+    this.state = 'countdown';
+    this.stateTime = afterGoal ? 1.5 : 3;
+    this.lastCount = 99;
+    this.banner = afterGoal ? null : { text: this.rules.ball ? 'Kick off' : 'Round ' + this.round, sub: this.rules.name + ' · ' + this.map.name, t: 0 };
+  }
+
+  alivePlayers() { return this.players.filter(p => p.alive); }
+
+  enemiesOf(p) {
+    return this.players.filter(q => q !== p && q.alive && (!this.teams || q.team !== p.team));
+  }
+
+  update(dt) {
+    this.time += dt;
+    this.stateTime -= dt;
+    this.shake = Math.max(0, this.shake - dt * 2.5);
+
+    for (const p of this.players) if (p.bot && p.alive) p.bot.think(dt);
+
+    if (this.state === 'countdown') {
+      const c = Math.ceil(this.stateTime);
+      if (c !== this.lastCount && c >= 1 && c <= 3 && !this.rules.ball) { Sound.count(false); this.lastCount = c; }
+      if (this.stateTime <= 0) {
+        this.state = 'play';
+        Sound.count(true);
+        for (const b of this.world.bodies) b.frozen = false;
+        this.banner = null;
+        this.texts.push({ text: 'GO!', x: 500, y: 250, t: 0, life: 0.8, size: 70, color: '#5ee6a8' });
+      }
+    }
+
+    if (this.state !== 'countdown') {
+      for (const p of this.players) if (p.alive) this.control(p, dt);
+      for (const p of this.players) if (p.alive && p.grapple) this.pullRope(p);
+      this.world.step();
+      this.handleEvents();
+      this.updateArrows(dt);
+      this.checkBounds();
+      if (this.state === 'play') {
+        this.roundTime += dt;
+        if (this.ball) this.unstickBall(dt);
+        this.checkRoundOver(dt);
+      }
+    }
+
+    if (this.state === 'roundEnd' && this.stateTime <= 0) {
+      const top = this.teams ? Math.max(this.teamWins.red, this.teamWins.blue) : Math.max(...this.players.map(p => p.wins));
+      if (top >= this.roundsToWin) this.endMatch();
+      else this.startRound();
+    } else if (this.state === 'goal' && this.stateTime <= 0) {
+      if (Math.max(this.teamWins.red, this.teamWins.blue) >= this.roundsToWin) this.endMatch();
+      else this.startRound(true);
+    } else if (this.state === 'matchEnd' && this.stateTime <= 0 && !this.over) {
+      this.over = true;
+      if (this.hooks.onOver) this.hooks.onOver(this);
+    }
+
+    this.updateFx(dt);
+  }
+
+  // ------------------------------------------------------------ player control
+
+  control(p, dt) {
+    const b = p.body, inp = p.input, rules = this.rules;
+    const heavy = rules.heavy && inp.heavy && !p.aiming;
+    const mass = heavy ? PHYS.heavyMass : 1;
+    if (b.m !== mass) b.setMass(mass);
+    p.heavy = heavy;
+    p.cooldown = Math.max(0, p.cooldown - dt);
+    let ax = 0, ay = 0;
+
+    if (rules.special === 'vtol') {
+      if (inp.left && !inp.right) b.av = -JET.turn;
+      else if (inp.right && !inp.left) b.av = JET.turn;
+      else b.av *= 0.7;
+      const dx = Math.sin(b.angle), dy = -Math.cos(b.angle);
+      p.thrusting = inp.up;
+      if (inp.up) { ax += dx * JET.thrust; ay += dy * JET.thrust; }
+      if (inp.down) { ax -= dx * JET.reverse; ay -= dy * JET.reverse; }
+      b.ax = ax / b.m; b.ay = ay / b.m;
+      return;
+    }
+
+    if (rules.special === 'bow') {
+      if (inp.special && !p.aiming && p.cooldown <= 0) {
+        p.aiming = true;
+        p.charge = 0;
+        p.aim = p.facing > 0 ? -0.55 : -Math.PI + 0.55;
+        Sound.draw();
+      }
+      if (p.aiming) {
+        if (inp.left) p.aim -= BOW.aimSpeed * dt;
+        if (inp.right) p.aim += BOW.aimSpeed * dt;
+        p.aim = wrapAngle(p.aim);
+        p.charge = Math.min(1, p.charge + dt / BOW.chargeTime);
+        if (!inp.special) this.fire(p);
+      }
+    }
+
+    if (rules.special === 'grapple') this.rope(p, inp);
+
+    if (!p.aiming) {
+      if (inp.left) { ax -= PHYS.move; p.facing = -1; }
+      if (inp.right) { ax += PHYS.move; p.facing = 1; }
+    }
+    if (inp.up) ay -= PHYS.up;
+    if (inp.down) ay += PHYS.down;
+    b.ax = ax / b.m;
+    b.ay = ay / b.m;
+
+  }
+
+  // runs after everyone's own controls so pulling another player isn't overwritten
+  pullRope(p) {
+    const b = p.body, g = p.grapple;
+    const [gx, gy] = this.anchorPos(g);
+    const dx = gx - b.x, dy = gy - b.y, d = Math.hypot(dx, dy) || 1;
+    if (d > ROPE.range * 1.7 || (g.player && !g.player.alive)) { p.grapple = null; return; }
+    const nx = dx / d, ny = dy / d;
+    const radial = b.vx * nx + b.vy * ny;
+    const pull = Math.min(ROPE.maxPull, d * ROPE.pull) - (radial < 0 ? radial * ROPE.damping : 0);
+    b.ax += nx * pull; b.ay += ny * pull;
+    if (g.player) {
+      const o = g.player.body;
+      const k = 0.55 * b.m / o.m;
+      o.ax -= nx * pull * k; o.ay -= ny * pull * k;
+    }
+  }
+
+  fire(p) {
+    const b = p.body;
+    const speed = lerp(BOW.minSpeed, BOW.maxSpeed, p.charge);
+    const dx = Math.cos(p.aim), dy = Math.sin(p.aim);
+    this.arrows.push({
+      x: b.x + dx * (b.r + 5), y: b.y + dy * (b.r + 5),
+      vx: dx * speed + b.vx * 0.25, vy: dy * speed + b.vy * 0.25,
+      owner: p, age: 0, stuck: false, life: 1.2, deadly: !!this.rules.lethal
+    });
+    p.aiming = false;
+    p.cooldown = BOW.cooldown;
+    Sound.shoot(p.charge);
+  }
+
+  rope(p, inp) {
+    if (!inp.special) { p.grapple = null; p.grappleLock = false; return; }
+    if (p.grapple || p.grappleLock) return;
+    p.grappleLock = true;
+    const target = this.grappleTarget(p);
+    if (!target) { this.fx.push({ kind: 'miss', x: p.body.x, y: p.body.y, a: rand(0, 6.28), t: 0, life: 0.2 }); return; }
+    p.grapple = target;
+    Sound.grapple();
+  }
+
+  // nearest thing to hook onto: any platform point or another player within range
+  grappleTarget(p) {
+    const b = p.body;
+    let best = null, bd = ROPE.range;
+    for (const s of this.world.shapes) {
+      if (s.nograpple || s.nophys) continue;
+      const [cx, cy] = s.closest(b.x, b.y);
+      const d = Math.hypot(cx - b.x, cy - b.y);
+      if (d < bd) {
+        bd = d;
+        // store the hook point in the shape's own frame so it rides along with moving platforms
+        const c = Math.cos(-s.a), sn = Math.sin(-s.a), lx = cx - s.x, ly = cy - s.y;
+        best = { shape: s, lx: lx * c - ly * sn, ly: lx * sn + ly * c };
+      }
+    }
+    for (const q of this.players) {
+      if (q === p || !q.alive) continue;
+      const d = Math.hypot(q.body.x - b.x, q.body.y - b.y) - q.body.r;
+      if (d < bd) { bd = d; best = { player: q }; }
+    }
+    return best;
+  }
+
+  anchorPos(g) {
+    if (g.player) return [g.player.body.x, g.player.body.y];
+    const s = g.shape, c = Math.cos(s.a), sn = Math.sin(s.a);
+    return [s.x + g.lx * c - g.ly * sn, s.y + g.lx * sn + g.ly * c];
+  }
+
+  // ------------------------------------------------------------ arrows
+
+  updateArrows(dt) {
+    for (const a of this.arrows) {
+      a.age += dt;
+      if (a.stuck) { a.life -= dt; continue; }
+      const nx = a.x + a.vx * dt, ny = a.y + a.vy * dt;
+      a.vy += PHYS.gravity * BOW.gravity * dt;
+      let hitP = null, ht = 2;
+      for (const q of this.players) {
+        if (!q.alive || (q === a.owner && a.age < 0.3)) continue;
+        const t = segCircle(a.x, a.y, nx, ny, q.body.x, q.body.y, q.body.r + 3);
+        if (t >= 0 && t < ht) { ht = t; hitP = q; }
+      }
+      const wall = this.world.ray(a.x, a.y, nx, ny);
+      if (hitP && (!wall || ht <= wall.t)) {
+        const q = hitP, qb = q.body;
+        if (a.deadly) this.kill(q, a.owner, 'arrow');
+        else {
+          qb.vx += a.vx * BOW.knock * qb.im;
+          qb.vy += a.vy * BOW.knock * qb.im;
+          qb.lastHitBy = a.owner; qb.lastHitTime = this.time;
+          Sound.thunk();
+          this.burst(qb.x, qb.y, '#ffffff', 6, 120);
+        }
+        if (this.hooks.onArrowHit) this.hooks.onArrowHit(a.owner, q, a.deadly);
+        a.life = 0; a.stuck = true;
+        continue;
+      }
+      if (wall) {
+        a.x = wall.x; a.y = wall.y; a.stuck = true; a.life = 1.0;
+        Sound.thunk();
+        continue;
+      }
+      a.x = nx; a.y = ny;
+      if (a.y > 900 || a.x < -300 || a.x > 1300 || a.age > 6) { a.stuck = true; a.life = 0; }
+    }
+    this.arrows = this.arrows.filter(a => !a.stuck || a.life > 0);
+  }
+
+  // ------------------------------------------------------------ deaths, bounds, events
+
+  handleEvents() {
+    for (const e of this.world.events) {
+      if (e.type === 'death') this.kill(e.body.owner, e.body.lastHitBy && this.time - e.body.lastHitTime < 4 ? e.body.lastHitBy : null, 'lava');
+      else if (e.type === 'hit') {
+        const v = e.power;
+        if (v > 60) Sound.bump(v / 900);
+        if (v > 350) { this.ring(e.x, e.y, v); if (this.involvesMe(e.a, e.b)) this.shake = Math.min(1, this.shake + v / 2500); }
+        if (e.a.kind === 'player' && e.b.kind === 'player') {
+          e.a.lastHitBy = e.b.owner; e.a.lastHitTime = this.time;
+          e.b.lastHitBy = e.a.owner; e.b.lastHitTime = this.time;
+        }
+      } else if (e.type === 'wall') {
+        if (e.power > 260) Sound.thud(e.power / 1500);
+      }
+    }
+    this.world.events.length = 0;
+    if (this.ball && this.state === 'play') this.checkGoal();
+  }
+
+  involvesMe(a, b) { return (a.owner && a.owner.info.isMe) || (b.owner && b.owner.info.isMe); }
+
+  checkBounds() {
+    for (const p of this.players) {
+      if (!p.alive) continue;
+      const b = p.body;
+      if (b.y > 760 || b.x < -150 || b.x > 1150 || b.y < -900) {
+        if (this.rules.ball) {
+          // nobody dies in football; put them back on their side
+          const s = this.map.spawns.find(s => s[2] === p.team) || this.map.spawns[0];
+          b.x = s[0]; b.y = s[1]; b.vx = b.vy = 0;
+        } else this.kill(p, b.lastHitBy && this.time - b.lastHitTime < 4 ? b.lastHitBy : null, 'fall');
+      }
+    }
+    if (this.ball && (this.ball.y > 800 || this.ball.x < -200 || this.ball.x > 1200)) {
+      const [bx, by] = this.map.ball;
+      Object.assign(this.ball, { x: bx, y: by, vx: 0, vy: 0 });
+    }
+  }
+
+  kill(p, by, how) {
+    if (!p || !p.alive) return;
+    p.alive = false;
+    p.grapple = null;
+    p.aiming = false;
+    const b = p.body;
+    b.dead = true;
+    this.world.remove(b);
+    for (const q of this.players) if (q.grapple && q.grapple.player === p) q.grapple = null;
+    const skin = p.info.skin;
+    this.burst(b.x, b.y, skin.base, 26, 380);
+    this.burst(b.x, b.y, skin.alt, 12, 260);
+    this.ring(b.x, b.y, 900);
+    Sound.pop();
+    if (p.info.isMe) this.shake = Math.min(1, this.shake + 0.6);
+    if (this.hooks.onDeath) this.hooks.onDeath(p, by, how);
+  }
+
+  checkRoundOver(dt) {
+    if (this.rules.ball) return;
+    const alive = this.alivePlayers();
+    let done = false, winner = null, team = null;
+    if (this.teams) {
+      const teams = new Set(alive.map(p => p.team));
+      if (teams.size <= 1) { done = true; team = teams.size ? [...teams][0] : null; }
+    } else if (alive.length <= 1) {
+      done = true;
+      winner = alive[0] || null;
+    }
+    if (!done && this.players.length === 1) done = false;
+    if (!done && this.roundTime > ROUND_LIMIT) done = true;
+    if (!done && this.roundTime > ROUND_LIMIT - 15 && !this.hurried) {
+      this.hurried = true;
+      this.texts.push({ text: '15 seconds left!', x: 500, y: 120, t: 0, life: 2, size: 34, color: '#ffd166' });
+    }
+    if (!done) { this.pendingEnd = 0; return; }
+    // wait a beat in case the last two die together
+    this.pendingEnd = (this.pendingEnd || 0) + dt;
+    if (this.pendingEnd < 0.4) return;
+    this.pendingEnd = 0;
+
+    let text, color = '#ffffff';
+    if (this.teams && team) {
+      this.teamWins[team]++;
+      for (const p of this.players) if (p.team === team) p.wins++;
+      text = (team === 'red' ? 'Red' : 'Blue') + ' team wins the round';
+      color = team === 'red' ? '#ff7b88' : '#7aa7ff';
+    } else if (!this.teams && winner && this.roundTime <= ROUND_LIMIT) {
+      winner.wins++;
+      text = winner.info.name + ' wins the round';
+      color = winner.info.skin.base;
+    } else text = 'Draw!';
+    this.state = 'roundEnd';
+    this.stateTime = 2.6;
+    this.banner = { text, sub: this.scoreLine(), t: 0, color };
+    Sound.win();
+    if (this.hooks.onRoundEnd) this.hooks.onRoundEnd(winner, team);
+  }
+
+  // a ball pinned in a corner or under a pile of people for a while gets dropped back in the middle
+  unstickBall(dt) {
+    if (this.roundTime > 100) {
+      // nobody has scored in ages, line everyone up again
+      this.startRound(true);
+      this.texts.push({ text: 'Kick off again', x: 500, y: 200, t: 0, life: 1.5, size: 34, color: '#ffd166' });
+      return;
+    }
+    const b = this.ball;
+    if (Math.hypot(b.vx, b.vy) < 60) this.ballIdle = (this.ballIdle || 0) + dt;
+    else this.ballIdle = Math.max(0, (this.ballIdle || 0) - dt * 2);
+    if (this.ballIdle < 7) return;
+    this.ballIdle = 0;
+    const [bx, by] = this.map.ball;
+    this.burst(b.x, b.y, '#ffffff', 10);
+    b.x = b.px = bx; b.y = b.py = by; b.vx = b.vy = 0;
+    this.ring(bx, by, 700);
+    this.texts.push({ text: 'Ball reset', x: 500, y: 200, t: 0, life: 1.2, size: 32, color: '#ffffff' });
+    Sound.whoosh();
+  }
+
+  checkGoal() {
+    const b = this.ball;
+    for (const g of this.map.goals) {
+      if (b.x > g.x && b.x < g.x + g.w && b.y > g.y && b.y < g.y + g.h) {
+        const scorer = g.team === 'red' ? 'blue' : 'red';
+        this.teamWins[scorer]++;
+        for (const p of this.players) if (p.team === scorer) p.wins++;
+        this.state = 'goal';
+        this.stateTime = 2.4;
+        this.banner = { text: 'GOAL!', sub: (scorer === 'red' ? 'Red' : 'Blue') + ' scores · ' + this.scoreLine(), t: 0, color: scorer === 'red' ? '#ff7b88' : '#7aa7ff' };
+        this.burst(b.x, b.y, scorer === 'red' ? '#ff5d6c' : '#4f8dff', 40, 500);
+        this.burst(b.x, b.y, '#ffffff', 20, 400);
+        Sound.goal();
+        if (this.hooks.onRoundEnd) this.hooks.onRoundEnd(null, scorer);
+        return;
+      }
+    }
+  }
+
+  scoreLine() {
+    if (this.teams) return 'Red ' + this.teamWins.red + ' - ' + this.teamWins.blue + ' Blue';
+    return this.players.slice().sort((a, b) => b.wins - a.wins).slice(0, 4).map(p => p.info.name + ' ' + p.wins).join('   ');
+  }
+
+  endMatch() {
+    let text, color = '#ffd166';
+    if (this.teams) {
+      const t = this.teamWins.red > this.teamWins.blue ? 'red' : 'blue';
+      text = (t === 'red' ? 'Red' : 'Blue') + ' team wins!';
+      color = t === 'red' ? '#ff7b88' : '#7aa7ff';
+      this.winnerTeam = t;
+    } else {
+      const w = this.players.slice().sort((a, b) => b.wins - a.wins)[0];
+      text = w.info.name + ' wins the game!';
+      this.winner = w;
+    }
+    this.state = 'matchEnd';
+    this.stateTime = 4;
+    this.banner = { text, sub: this.scoreLine(), t: 0, color, big: true };
+    Sound.win();
+    if (this.hooks.onMatchEnd) this.hooks.onMatchEnd(this);
+  }
+
+  removePlayer(info) {
+    const p = this.players.find(q => q.info === info);
+    if (!p) return;
+    if (p.alive) {
+      p.alive = false;
+      if (p.body) { this.world.remove(p.body); this.burst(p.body.x, p.body.y, '#9aa2d6', 10, 150); }
+    }
+    for (const q of this.players) if (q.grapple && q.grapple.player === p) q.grapple = null;
+    this.players.splice(this.players.indexOf(p), 1);
+  }
+
+  // ------------------------------------------------------------ effects
+
+  burst(x, y, color, n, speed) {
+    for (let i = 0; i < n; i++) {
+      const a = rand(0, Math.PI * 2), s = rand(0.2, 1) * speed;
+      this.fx.push({ kind: 'p', x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 80, t: 0, life: rand(0.4, 0.9), color, size: rand(2, 5) });
+    }
+  }
+  ring(x, y, power) { this.fx.push({ kind: 'ring', x, y, t: 0, life: 0.35, size: clamp(power / 25, 14, 50) }); }
+
+  updateFx(dt) {
+    for (const f of this.fx) {
+      f.t += dt;
+      if (f.kind === 'p') { f.vy += 700 * dt; f.x += f.vx * dt; f.y += f.vy * dt; f.vx *= 0.99; }
+    }
+    this.fx = this.fx.filter(f => f.t < f.life);
+    for (const t of this.texts) t.t += dt;
+    this.texts = this.texts.filter(t => t.t < t.life);
+    if (this.banner) this.banner.t += dt;
+  }
+}
+
+// segment vs circle: fraction along the segment of the first touch, or -1
+function segCircle(x1, y1, x2, y2, cx, cy, r) {
+  const dx = x2 - x1, dy = y2 - y1, fx = x1 - cx, fy = y1 - cy;
+  const a = dx * dx + dy * dy, b = 2 * (fx * dx + fy * dy), c = fx * fx + fy * fy - r * r;
+  if (c <= 0) return 0;
+  const disc = b * b - 4 * a * c;
+  if (disc < 0 || a === 0) return -1;
+  const t = (-b - Math.sqrt(disc)) / (2 * a);
+  return t >= 0 && t <= 1 ? t : -1;
+}
+
+// places on top of platforms where a ball can sit. bots use them to find their way back to safety
+function findStandSpots(world) {
+  const out = [];
+  for (const s of world.shapes) {
+    if (s.death || s.nophys) continue;
+    const [x0, y0, x1, y1] = s.box;
+    for (let x = x0 + 10; x <= x1 - 10; x += 16) {
+      const hit = world.ray(x, Math.min(y0 - 60, -50), x, y1 + 2);
+      if (!hit || hit.shape !== s) continue;
+      // make sure it's a top surface and not a steep side
+      const c = s.touch(x, hit.y - 2, 4);
+      if (c && c.ny > -0.55) continue;
+      const lx = x - s.x, ly = hit.y - PHYS.playerRadius - 2 - s.y;
+      const cs = Math.cos(-s.a), sn = Math.sin(-s.a);
+      out.push({ shape: s, lx: lx * cs - ly * sn, ly: lx * sn + ly * cs });
+    }
+  }
+  return out;
+}
+
+function spotPos(sp) {
+  const s = sp.shape, c = Math.cos(s.a), sn = Math.sin(s.a);
+  return [s.x + sp.lx * c - sp.ly * sn, s.y + sp.lx * sn + sp.ly * c];
+}
+</script>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- bots
+// Bots only press the same keys a player would. They re-think every 60-160 ms with a little
+// randomness, which makes them look like people on a so-so connection rather than robots.
+
+class Bot {
+  constructor(p, match) {
+    this.p = p;
+    this.m = match;
+    this.skill = p.info.skill;
+    this.reset();
+  }
+
+  reset() {
+    this.next = rand(0.1, 0.4);
+    this.firstShot = rand(0.6, 2.2);
+    this.stall = 0;
+    this.retreat = 0;
+    this.target = null;
+    this.chargeGoal = 0.7;
+    this.aimError = 0;
+    this.ropeTime = 0;
+    this.wander = 0;
+    this.idle = 0;
+  }
+
+  think(dt) {
+    this.next -= dt;
+    this.ropeTime += dt;
+    if (this.next > 0) return;
+    this.next = (this.m.mode === 'vtol' ? rand(0.03, 0.06) : rand(0.06, 0.16)) * (1.5 - this.skill * 0.6);
+    const inp = this.p.input;
+    const keep = { special: inp.special };
+    inp.left = inp.right = inp.up = inp.down = inp.heavy = false;
+    inp.special = false;
+    if (this.m.state === 'countdown') return;
+
+    // once in a while a real person just... stops for a second
+    if (this.idle > 0) { this.idle -= dt; inp.special = keep.special && this.m.rules.special === 'bow'; return; }
+    if (chance(0.004 * (1.2 - this.skill))) { this.idle = rand(0.2, 0.8); return; }
+
+    switch (this.m.mode) {
+      case 'arrows': case 'deatharrows': this.archer(inp, keep); break;
+      case 'grapple': this.grappler(inp); break;
+      case 'vtol': this.pilot(inp); break;
+      case 'football': this.striker(inp); break;
+      default: this.brawler(inp);
+    }
+  }
+
+  // ------------------------------------------------------------ shared helpers
+
+  get b() { return this.p.body; }
+
+  pickTarget() {
+    const foes = this.m.enemiesOf(this.p);
+    if (!foes.length) return null;
+    const b = this.b;
+    const d = q => Math.hypot(q.body.x - b.x, q.body.y - b.y);
+    let best = foes.reduce((a, q) => d(q) < d(a) ? q : a);
+    // stick with the current target unless someone is a lot closer
+    if (this.target && this.target.alive && foes.includes(this.target) && d(this.target) < d(best) * 1.5) best = this.target;
+    if (chance(0.02)) best = pick(foes);
+    this.target = best;
+    return best;
+  }
+
+  ground(x, y, depth = 500) {
+    return this.m.world.ray(x, y, x, y + depth);
+  }
+
+  // is there something safe to land on below this x?
+  safeBelow(x, y) {
+    const g = this.ground(x, y, 520);
+    return g && !g.shape.death ? g : null;
+  }
+
+  nearestSpot(preferBelow) {
+    const b = this.b;
+    let best = null, bd = 1e9;
+    for (const sp of this.m.spots) {
+      const [x, y] = spotPos(sp);
+      let d = Math.abs(x - b.x) + Math.max(0, b.y - y) * (preferBelow ? 2.5 : 0.6);
+      if (d < bd) { bd = d; best = [x, y]; }
+    }
+    return best;
+  }
+
+  steerTo(inp, x, slack = 8) {
+    const b = this.b;
+    // aim for where we'll be, not where we are
+    const future = b.x + b.vx * 0.32;
+    if (future < x - slack) inp.right = true;
+    else if (future > x + slack) inp.left = true;
+  }
+
+  // falling with nothing under us: head for the closest platform and slow the fall
+  recover(inp) {
+    const b = this.b;
+    if (this.safeBelow(b.x + b.vx * 0.3, b.y)) return false;
+    const spot = this.nearestSpot(true);
+    if (!spot) return false;
+    this.steerTo(inp, spot[0], 4);
+    if (spot[1] < b.y + 60) inp.up = true;
+    return true;
+  }
+
+  edgeAhead(dir) {
+    const b = this.b;
+    const x = b.x + b.vx * 0.42 + dir * 34;
+    return !this.safeBelow(x, b.y);
+  }
+
+  // ------------------------------------------------------------ classic / simple
+
+  // the longer a round drags on, the less careful everyone gets
+  get aggression() { return clamp((this.m.roundTime - 15) / 35, 0, 1); }
+
+  brawler(inp) {
+    const b = this.b;
+    if (this.recover(inp)) return;
+    const t = this.pickTarget();
+    if (!t) { this.wanderAbout(inp); return; }
+    const tb = t.body;
+    const dx = tb.x - b.x, dy = tb.y - b.y, dist = Math.hypot(dx, dy);
+    const dir = Math.sign(dx) || 1;
+    const brave = this.aggression;
+
+    let go = dir;
+    if (this.edgeAhead(go) && dist > 70 + brave * 120) go = 0;
+    // if the edge is right there, back off instead of rolling off
+    if (this.edgeAhead(Math.sign(b.vx) || dir) && Math.abs(b.vx) > 160 + brave * 200) go = -Math.sign(b.vx);
+    // take a run-up when someone is just sitting there
+    if (brave > 0.3 && dist < 60 && Math.abs(b.vx) < 60 && chance(0.15)) this.retreat = rand(0.25, 0.5);
+    if (this.retreat > 0) {
+      this.retreat -= 0.1;
+      if (!this.edgeAhead(-dir)) go = -dir;
+    }
+    if (go > 0) inp.right = true; else if (go < 0) inp.left = true;
+
+    const closing = -((tb.vx - b.vx) * dx + (tb.vy - b.vy) * dy) / (dist || 1);
+    if (this.m.rules.heavy) {
+      if (dist < 95 + brave * 40 && closing > 60 && chance(0.35 + this.skill * 0.6)) inp.heavy = true;
+      // brace when someone heavy is coming in
+      if (t.heavy && dist < 120 && closing > 120 && chance(this.skill)) inp.heavy = true;
+    }
+    if (dy < -45 && Math.abs(dx) < 170) inp.up = true;
+    if (chance(0.03 * (1.1 - this.skill))) { inp.left = !inp.left; inp.right = !inp.left; }
+  }
+
+  wanderAbout(inp) {
+    const spot = this.nearestSpot(false);
+    if (spot) this.steerTo(inp, spot[0] + Math.sin(this.m.time * 0.7 + this.skill * 9) * 60, 20);
+  }
+
+  // ------------------------------------------------------------ arrows
+
+  archer(inp, keep) {
+    const p = this.p, b = this.b;
+    const t = this.pickTarget();
+
+    if (p.aiming) {
+      if (!t) return;
+      const want = this.ballistic(t) + this.aimError;
+      const err = wrapAngle(want - p.aim);
+      const tol = 0.05 + (1 - this.skill) * 0.1;
+      if (err > tol) inp.right = true;
+      else if (err < -tol) inp.left = true;
+      const ready = p.charge >= this.chargeGoal && Math.abs(err) < tol * 1.6;
+      inp.special = !(ready || p.charge >= 1 && chance(0.4));
+      return;
+    }
+
+    if (this.recover(inp)) return;
+    if (this.dodge(inp)) return;
+    if (!t) { this.wanderAbout(inp); return; }
+    const tb = t.body, dx = tb.x - b.x, dist = Math.hypot(dx, tb.y - b.y);
+    const deadly = this.m.rules.lethal;
+    const far = deadly ? 560 : 480, near = deadly ? 230 : 150;
+
+    let go = 0;
+    if (dist > far) go = Math.sign(dx);
+    else if (dist < near) go = -Math.sign(dx);
+    if (go && this.edgeAhead(go)) go = 0;
+    if (go > 0) inp.right = true; else if (go < 0) inp.left = true;
+
+    // can't push someone in arrows mode without getting close, so mostly shoot
+    if (!deadly && dist < 80) { this.brawler(inp); return; }
+    const settled = Math.abs(b.vx) < 260;
+    const eager = deadly ? 0.12 + this.skill * 0.3 : 0.25 + this.skill * 0.5;
+    if (this.m.roundTime > this.firstShot && p.cooldown <= 0 && dist < 780 && settled && chance(eager)) {
+      inp.special = true;
+      inp.left = inp.right = false;
+      this.chargeGoal = clamp(dist / 900 + rand(0.15, 0.45), 0.35, 1);
+      this.aimError = rand(-1, 1) * (1.15 - this.skill) * (deadly ? 0.3 : 0.2);
+      if (chance(0.25)) this.aimError += rand(-0.35, 0.35);   // everyone fluffs a shot sometimes
+    }
+  }
+
+  // the bow angle that lands an arrow on the target, leading it a bit
+  ballistic(t) {
+    const b = this.b, tb = t.body;
+    const v = lerp(BOW.minSpeed, BOW.maxSpeed, this.chargeGoal);
+    const g = PHYS.gravity * BOW.gravity;
+    let tx = tb.x, ty = tb.y;
+    let angle = 0;
+    for (let i = 0; i < 2; i++) {
+      const X = tx - b.x, Y = -(ty - b.y);
+      const ax = Math.abs(X) || 1;
+      const disc = v ** 4 - g * (g * ax * ax + 2 * Y * v * v);
+      const phi = disc < 0 ? Math.PI / 4 : Math.atan((v * v - Math.sqrt(disc)) / (g * ax));
+      angle = X >= 0 ? -phi : phi - Math.PI;
+      const flight = ax / Math.max(60, v * Math.cos(phi));
+      const lead = 0.4 + this.skill * 0.5;
+      tx = tb.x + tb.vx * flight * lead;
+      ty = tb.y + tb.vy * flight * lead * 0.5;
+    }
+    return angle;
+  }
+
+  dodge(inp) {
+    const b = this.b;
+    if (chance(0.5 - this.skill * 0.4)) return false;
+    for (const a of this.m.arrows) {
+      if (a.stuck || a.owner === this.p) continue;
+      // closest approach in the next half second, ignoring gravity
+      const rx = b.x - a.x, ry = b.y - a.y;
+      const rv = a.vx * a.vx + a.vy * a.vy;
+      const t = clamp((rx * a.vx + ry * a.vy) / (rv || 1), 0, 0.6);
+      const cx = a.x + a.vx * t - b.x, cy = a.y + a.vy * t + 0.5 * PHYS.gravity * t * t - b.y;
+      if (Math.hypot(cx, cy) < 42 && t > 0.03) {
+        const away = cx > 0 ? -1 : 1;
+        if (!this.edgeAhead(away)) { if (away > 0) inp.right = true; else inp.left = true; }
+        if (!this.m.rules.lethal) inp.heavy = true;
+        else if (cy > 0) inp.up = true;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ------------------------------------------------------------ grapple
+
+  grappler(inp) {
+    const p = this.p, b = this.b;
+    const hanging = !!p.grapple;
+    const noFloor = !this.safeBelow(b.x + b.vx * 0.3, b.y);
+
+    if (hanging) {
+      const [ax, ay] = this.m.anchorPos(p.grapple);
+      const close = Math.hypot(ax - b.x, ay - b.y) < 45;
+      const safe = !noFloor && b.vy > -150;
+      const pullingSomeone = !!p.grapple.player;
+      const keep = pullingSomeone ? this.ropeTime < 0.5 : (!close && !safe) || this.ropeTime < 0.25;
+      inp.special = keep && this.ropeTime < 2.5;
+      const spot = this.nearestSpot(false);
+      if (spot) this.steerTo(inp, spot[0], 10);
+      return;
+    }
+
+    if (noFloor && b.vy > -50) {
+      // falling: grab whatever is up and close
+      const tgt = this.m.grappleTarget(p);
+      if (tgt && !tgt.player) {
+        const [ax, ay] = this.m.anchorPos(tgt);
+        if (ay < b.y + 40 && chance(0.4 + this.skill * 0.5)) { inp.special = true; this.ropeTime = 0; return; }
+      }
+      this.recover(inp);
+      return;
+    }
+
+    this.brawler(inp);
+    const t = this.target;
+    if (t && t.alive && chance(0.03 + this.skill * 0.04)) {
+      const d = Math.hypot(t.body.x - b.x, t.body.y - b.y);
+      const tgt = this.m.grappleTarget(p);
+      if (d < ROPE.range && tgt && tgt.player === t) { inp.special = true; this.ropeTime = 0; }
+    }
+  }
+
+  // ------------------------------------------------------------ vtol
+
+  pilot(inp) {
+    const b = this.b;
+    const t = this.pickTarget();
+    let tx = t ? t.body.x : 500, ty = t ? t.body.y : 300;
+    // ram from slightly above so a miss doesn't send us into the floor
+    ty = clamp(ty - 20, 90, 500);
+    tx = clamp(tx, 90, 910);
+
+    // where we'd like to be going
+    const cap = 380 + this.skill * 260;
+    let dvx = (tx - b.x) * 1.7, dvy = (ty - b.y) * 1.7;
+    const dl = Math.hypot(dvx, dvy);
+    if (dl > cap) { dvx *= cap / dl; dvy *= cap / dl; }
+
+    // feel around for anything red and steer away from it
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4, ex = Math.cos(a), ey = Math.sin(a);
+      const reach = 110 + Math.max(0, b.vx * ex + b.vy * ey) * 0.45;
+      const hit = this.m.world.ray(b.x, b.y, b.x + ex * reach, b.y + ey * reach);
+      if (hit && hit.shape.death) {
+        const push = (1 - hit.t) * 1100;
+        dvx -= ex * push; dvy -= ey * push;
+      }
+    }
+
+    // acceleration we need, including holding ourselves up against gravity
+    const ax = (dvx - b.vx) * 3.2, ay = (dvy - b.vy) * 3.2 - PHYS.gravity;
+    const want = Math.atan2(ax, -ay);
+    const err = wrapAngle(want - b.angle);
+    const tol = 0.08 + (1 - this.skill) * 0.12;
+    if (err > tol) inp.right = true; else if (err < -tol) inp.left = true;
+    const need = Math.hypot(ax, ay);
+    if (Math.abs(err) < 0.55 && need > 500) inp.up = true;
+    // pointing roughly the wrong way while dropping fast: thrust anyway if it helps
+    if (!inp.up && b.vy > 260 && Math.cos(b.angle) > 0.3) inp.up = true;
+
+    if (t) {
+      const d = Math.hypot(t.body.x - b.x, t.body.y - b.y);
+      const closing = -((t.body.vx - b.vx) * (t.body.x - b.x) + (t.body.vy - b.vy) * (t.body.y - b.y)) / (d || 1);
+      if (d < 80 && closing > 150 && chance(this.skill)) inp.heavy = true;
+    }
+  }
+
+  // ------------------------------------------------------------ football
+
+  striker(inp) {
+    const b = this.b, ball = this.m.ball;
+    if (!ball) return;
+    const goals = this.m.map.goals;
+    const theirs = goals.find(g => g.team !== this.p.team), ours = goals.find(g => g.team === this.p.team);
+    const gx = theirs.x + theirs.w / 2, gy = theirs.y + theirs.h * 0.6;
+    const mates = this.m.players.filter(q => q.team === this.p.team && q.alive);
+    const myD = Math.hypot(ball.x - b.x, ball.y - b.y);
+    const closest = mates.every(q => q === this.p || Math.hypot(ball.x - q.body.x, ball.y - q.body.y) >= myD - 5);
+
+    const keeper = mates.length > 2 && mates.slice().sort((a, c) => Math.abs(a.body.x - (ours.x + ours.w / 2)) - Math.abs(c.body.x - (ours.x + ours.w / 2)))[0] === this.p;
+    if (!closest && keeper) {
+      // hang back between the ball and our own goal, closer in when it's coming our way
+      const ox = ours.x + ours.w / 2, side = Math.sign(500 - ox);
+      const incoming = ball.vx * side < -150;
+      const out = clamp(Math.abs(ball.x - ox) * (incoming ? 0.18 : 0.35), 55, 200);
+      this.steerTo(inp, ox + side * out, 12);
+      if (incoming && Math.abs(ball.x - b.x) < 160) inp.heavy = true;
+      if (ball.y < b.y - 60 && Math.abs(ball.x - b.x) < 110) inp.up = true;
+      return;
+    }
+
+    // ball wedged between two people: back off and come in again with some speed
+    if (myD < 55 && Math.hypot(ball.vx, ball.vy) < 45) this.stall += 0.1; else this.stall = Math.max(0, this.stall - 0.05);
+    if (this.stall > 1) { this.stall = 0; this.retreat = rand(0.35, 0.6); }
+    if (this.retreat > 0) {
+      this.retreat -= 0.1;
+      if (b.x < ball.x) inp.left = true; else inp.right = true;
+      if (chance(0.4)) inp.up = true;
+      return;
+    }
+
+    let dx = gx - ball.x, dy = gy - ball.y;
+    const dl = Math.hypot(dx, dy) || 1;
+    dx /= dl; dy /= dl;
+    const behindX = ball.x - dx * (ball.r + b.r + 4);
+    const wrongSide = (b.x - ball.x) * dx > 6;
+    const nearOwn = Math.abs(ball.x - (ours.x + ours.w / 2)) < 210;
+    if (wrongSide && nearOwn) {
+      // ball is between us and our own goal: going round it would just shove it in, so wait on
+      // the field side and only touch it if it comes up off the ground
+      this.steerTo(inp, ball.x + dx * 85, 10);
+      if (ball.y < b.y - 25 && Math.abs(ball.x - b.x) < 100) inp.up = true;
+    } else if (wrongSide) {
+      // go round the ball rather than knocking it backwards
+      this.steerTo(inp, ball.x - dx * 70, 6);
+      if (Math.abs(b.x - ball.x) < 60) inp.up = true;
+    } else {
+      this.steerTo(inp, ball.x + (behindX - ball.x) * 0.3, 4);
+      if (myD < 70 && Math.abs(b.vx) > 120 && chance(0.4 + this.skill * 0.4)) inp.heavy = true;
+    }
+    if (ball.y < b.y - 30 && Math.abs(ball.x - b.x) < 120) inp.up = true;
+    if (ball.y > b.y + 30 && Math.abs(ball.x - b.x) < 60) inp.down = true;
+  }
+}
+</script>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- skins
+
+const SKIN_COLORS = ['#ff5d6c', '#ff8a4c', '#ffd166', '#b7e35b', '#5ee6a8', '#3fd0d4', '#5aa9ff', '#7b7dff', '#b77bff', '#ff7bd1',
+  '#ffffff', '#c9cfe8', '#8a90b3', '#4a4f6d', '#22253a', '#a0623c', '#f2c9a0', '#2fa36b'];
+const PATTERNS = ['plain', 'half', 'stripes', 'dots', 'ring', 'band', 'quarters', 'eyes', 'star', 'target', 'zigzag', 'spiral'];
+
+function randomSkin() {
+  const base = pick(SKIN_COLORS);
+  let alt = pick(SKIN_COLORS);
+  while (alt === base) alt = pick(SKIN_COLORS);
+  return { base, alt, pattern: chance(0.2) ? 'plain' : pick(PATTERNS) };
+}
+
+function drawSkin(ctx, x, y, r, angle, skin, outline = true) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fillStyle = skin.base;
+  ctx.fill();
+  ctx.save();
+  ctx.clip();
+  ctx.fillStyle = skin.alt;
+  ctx.strokeStyle = skin.alt;
+  const p = skin.pattern;
+  if (p === 'half') ctx.fillRect(-r, 0, 2 * r, r);
+  else if (p === 'stripes') for (let i = -2; i <= 2; i++) ctx.fillRect(i * r * 0.5 - r * 0.12, -r, r * 0.24, 2 * r);
+  else if (p === 'dots') {
+    for (const [dx, dy] of [[-0.45, -0.4], [0.4, -0.35], [0, 0.1], [-0.4, 0.5], [0.45, 0.45]]) {
+      ctx.beginPath(); ctx.arc(dx * r, dy * r, r * 0.17, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (p === 'ring') { ctx.lineWidth = r * 0.28; ctx.beginPath(); ctx.arc(0, 0, r * 0.62, 0, Math.PI * 2); ctx.stroke(); }
+  else if (p === 'band') ctx.fillRect(-r, -r * 0.22, 2 * r, r * 0.44);
+  else if (p === 'quarters') { ctx.fillRect(0, -r, r, r); ctx.fillRect(-r, 0, r, r); }
+  else if (p === 'eyes') {
+    ctx.fillStyle = '#ffffff';
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * r * 0.36, -r * 0.18, r * 0.24, r * 0.3, 0, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = skin.alt;
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(s * r * 0.4, -r * 0.12, r * 0.12, 0, Math.PI * 2); ctx.fill(); }
+  } else if (p === 'star') {
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const rr = i % 2 ? r * 0.3 : r * 0.72, a = i * Math.PI / 5 - Math.PI / 2;
+      ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+    }
+    ctx.closePath(); ctx.fill();
+  } else if (p === 'target') {
+    ctx.lineWidth = r * 0.18;
+    for (const k of [0.35, 0.75]) { ctx.beginPath(); ctx.arc(0, 0, r * k, 0, Math.PI * 2); ctx.stroke(); }
+  } else if (p === 'zigzag') {
+    ctx.lineWidth = r * 0.22; ctx.beginPath();
+    for (let i = 0; i <= 6; i++) ctx.lineTo(-r + i * r / 3, i % 2 ? -r * 0.18 : r * 0.18);
+    ctx.stroke();
+  } else if (p === 'spiral') {
+    ctx.lineWidth = r * 0.16; ctx.beginPath();
+    for (let a = 0; a < Math.PI * 5; a += 0.2) { const rr = a / (Math.PI * 5) * r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.stroke();
+  }
+  ctx.restore();
+  // soft shine so it reads as a ball
+  const g = ctx.createRadialGradient(-r * 0.35, -r * 0.4, r * 0.1, 0, 0, r);
+  g.addColorStop(0, 'rgba(255,255,255,0.35)');
+  g.addColorStop(0.5, 'rgba(255,255,255,0)');
+  g.addColorStop(1, 'rgba(0,0,0,0.18)');
+  ctx.rotate(-angle);
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill();
+  if (outline) { ctx.lineWidth = Math.max(1.5, r * 0.11); ctx.strokeStyle = 'rgba(10,12,30,0.55)'; ctx.stroke(); }
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- renderer
+
+const Render = (() => {
+  const canvas = $('game');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, dpr = 1, scale = 1, ox = 0, oy = 0;
+  const stripes = makeStripes();
+
+  function makeStripes() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 20;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ff5d6c'; g.fillRect(0, 0, 20, 20);
+    g.strokeStyle = '#e8414f'; g.lineWidth = 6;
+    g.beginPath(); g.moveTo(-5, 25); g.lineTo(25, -5); g.stroke();
+    g.beginPath(); g.moveTo(-5, 5); g.lineTo(5, -5); g.stroke();
+    g.beginPath(); g.moveTo(15, 25); g.lineTo(25, 15); g.stroke();
+    return g.createPattern(c, 'repeat');
+  }
+
+  function resize(view) {
+    const rect = canvas.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(1, Math.round(rect.width * dpr));
+    H = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    const v = view || { x: 0, y: 0, w: 1000, h: 650 };
+    scale = Math.min(W / v.w, H / v.h);
+    ox = (W - v.w * scale) / 2 - v.x * scale;
+    oy = (H - v.h * scale) / 2 - v.y * scale;
+  }
+
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16);
+    const r = clamp(Math.round(((n >> 16) & 255) * k), 0, 255), g = clamp(Math.round(((n >> 8) & 255) * k), 0, 255), b = clamp(Math.round((n & 255) * k), 0, 255);
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
+  function background(t) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#2a3163');
+    g.addColorStop(1, '#171b3a');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(scale, scale);
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = -300; x <= 1300; x += 50) { ctx.moveTo(x, -400); ctx.lineTo(x, 1000); }
+    for (let y = -400; y <= 1000; y += 50) { ctx.moveTo(-300, y); ctx.lineTo(1300, y); }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function shapePath(s, x, y, a) {
+    ctx.beginPath();
+    if (s.t === 'circle') { ctx.arc(x, y, s.r, 0, Math.PI * 2); return; }
+    const c = Math.cos(a), sn = Math.sin(a);
+    s.local.forEach(([lx, ly], i) => {
+      const wx = x + lx * c - ly * sn, wy = y + lx * sn + ly * c;
+      if (i) ctx.lineTo(wx, wy); else ctx.moveTo(wx, wy);
+    });
+    ctx.closePath();
+  }
+
+  function drawShapes(world, alpha) {
+    for (const pass of [0, 1]) {
+      for (const s of world.shapes) {
+        const x = lerp(s.px, s.x, alpha), y = lerp(s.py, s.y, alpha), a = lerp(s.pa, s.a, alpha);
+        if (pass === 0) {
+          // drop shadow
+          shapePath(s, x + 4, y + 7, a);
+          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          ctx.fill();
+          continue;
+        }
+        shapePath(s, x, y, a);
+        const col = s.color || COL.plat;
+        ctx.fillStyle = s.death ? stripes : col;
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = s.death ? '#c23443' : shade(col, 0.72);
+        ctx.stroke();
+        if (!s.death) {
+          // light top edge
+          ctx.save();
+          ctx.clip();
+          shapePath(s, x, y + 4, a);
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+  }
+
+  function drawGoals(map) {
+    if (!map.goals) return;
+    for (const g of map.goals) {
+      ctx.save();
+      ctx.fillStyle = g.team === 'red' ? 'rgba(255,93,108,0.22)' : 'rgba(79,141,255,0.22)';
+      ctx.fillRect(g.x, g.y, g.w, g.h);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let y = g.y; y <= g.y + g.h; y += 12) { ctx.moveTo(g.x, y); ctx.lineTo(g.x + g.w, y); }
+      for (let x = g.x; x <= g.x + g.w; x += 10) { ctx.moveTo(x, g.y); ctx.lineTo(x, g.y + g.h); }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function playerPos(p, alpha) {
+    const b = p.body;
+    return [lerp(b.px, b.x, alpha), lerp(b.py, b.y, alpha), lerp(b.pangle, b.angle, alpha)];
+  }
+
+  function drawPlayer(m, p, alpha) {
+    const b = p.body;
+    const [x, y, a] = playerPos(p, alpha);
+    const r = b.r;
+    if (m.mode === 'vtol') drawJet(p, x, y, a, r);
+    if (p.heavy) {
+      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fill();
+    }
+    drawSkin(ctx, x, y, r, m.mode === 'vtol' ? a : a, p.info.skin, !p.heavy);
+    if (p.heavy) {
+      ctx.beginPath(); ctx.arc(x, y, r + 1, 0, Math.PI * 2);
+      ctx.lineWidth = 4; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+    }
+    if (m.teams) {
+      ctx.beginPath(); ctx.arc(x, y, r + (p.heavy ? 6 : 3), 0, Math.PI * 2);
+      ctx.lineWidth = 2; ctx.strokeStyle = p.team === 'red' ? '#ff5d6c' : '#4f8dff'; ctx.stroke();
+    }
+    if (p.aiming) drawBow(p, x, y, r);
+    if (settings.names) {
+      ctx.font = 'bold 12px ' + getComputedStyle(document.body).fontFamily;
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(10,12,30,0.75)';
+      const label = p.info.name;
+      ctx.strokeText(label, x, y - r - 9);
+      ctx.fillStyle = m.teams ? (p.team === 'red' ? '#ffb3bb' : '#b5ceff') : (p.info.isMe ? '#ffffff' : '#dfe3ff');
+      ctx.fillText(label, x, y - r - 9);
+    }
+  }
+
+  function drawBow(p, x, y, r) {
+    const dx = Math.cos(p.aim), dy = Math.sin(p.aim);
+    const len = r + 14 + 38 * p.charge;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.moveTo(x + dx * (r + 4), y + dy * (r + 4)); ctx.lineTo(x + dx * (r + 52), y + dy * (r + 52)); ctx.stroke();
+    ctx.strokeStyle = p.charge >= 1 ? '#ffd166' : '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(x + dx * (r + 4), y + dy * (r + 4)); ctx.lineTo(x + dx * len, y + dy * len); ctx.stroke();
+    // little bow arc
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#d9b382';
+    ctx.beginPath(); ctx.arc(x, y, r + 7, p.aim - 0.7, p.aim + 0.7); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawJet(p, x, y, a, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(a);
+    if (p.thrusting) {
+      const f = rand(0.8, 1.2);
+      ctx.beginPath();
+      ctx.moveTo(-6, r + 2); ctx.lineTo(0, r + 18 * f); ctx.lineTo(6, r + 2);
+      ctx.fillStyle = '#ffb347'; ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-3, r + 2); ctx.lineTo(0, r + 10 * f); ctx.lineTo(3, r + 2);
+      ctx.fillStyle = '#fff3b0'; ctx.fill();
+    }
+    ctx.fillStyle = shade(p.info.skin.alt, 0.85);
+    ctx.beginPath(); ctx.moveTo(-r - 9, 6); ctx.lineTo(-r + 3, -2); ctx.lineTo(-r + 3, 9); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(r + 9, 6); ctx.lineTo(r - 3, -2); ctx.lineTo(r - 3, 9); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.moveTo(0, -r - 10); ctx.lineTo(-6, -r + 2); ctx.lineTo(6, -r + 2); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawArrows(m) {
+    for (const a of m.arrows) {
+      const sp = Math.hypot(a.vx, a.vy) || 1;
+      const dx = a.vx / sp, dy = a.vy / sp;
+      const alpha = a.stuck ? clamp(a.life / 0.5, 0, 1) : 1;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = a.deadly ? '#ffc2c8' : '#f4f1e6';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(a.x - dx * 22, a.y - dy * 22); ctx.lineTo(a.x, a.y); ctx.stroke();
+      ctx.fillStyle = a.deadly ? '#ff5d6c' : '#c9cfe8';
+      ctx.beginPath(); ctx.moveTo(a.x + dx * 6, a.y + dy * 6); ctx.lineTo(a.x - dx * 2 - dy * 4, a.y - dy * 2 + dx * 4); ctx.lineTo(a.x - dx * 2 + dy * 4, a.y - dy * 2 - dx * 4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = a.owner.info.skin.base;
+      ctx.beginPath(); ctx.moveTo(a.x - dx * 22, a.y - dy * 22); ctx.lineTo(a.x - dx * 17 - dy * 4, a.y - dy * 17 + dx * 4); ctx.lineTo(a.x - dx * 17 + dy * 4, a.y - dy * 17 - dx * 4); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawRopes(m, alpha) {
+    for (const p of m.players) {
+      if (!p.alive || !p.grapple) continue;
+      const [x, y] = playerPos(p, alpha);
+      const [ax, ay] = m.anchorPos(p.grapple);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ax, ay); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath(); ctx.arc(ax, ay, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawBall(b, alpha) {
+    const x = lerp(b.px, b.x, alpha), y = lerp(b.py, b.y, alpha), a = lerp(b.pangle, b.angle, alpha);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff'; ctx.fill();
+    ctx.save(); ctx.clip(); ctx.rotate(a);
+    ctx.fillStyle = '#2b2f45';
+    const patch = (cx, cy, rr) => {
+      ctx.beginPath();
+      for (let i = 0; i < 5; i++) { const t = i * Math.PI * 2 / 5 - Math.PI / 2; ctx.lineTo(cx + Math.cos(t) * rr, cy + Math.sin(t) * rr); }
+      ctx.closePath(); ctx.fill();
+    };
+    patch(0, 0, b.r * 0.32);
+    for (let i = 0; i < 5; i++) { const t = i * Math.PI * 2 / 5 - Math.PI / 2; patch(Math.cos(t) * b.r * 0.92, Math.sin(t) * b.r * 0.92, b.r * 0.3); }
+    ctx.restore();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(10,12,30,0.5)'; ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawFx(m) {
+    for (const f of m.fx) {
+      const k = 1 - f.t / f.life;
+      if (f.kind === 'p') {
+        ctx.globalAlpha = k;
+        ctx.fillStyle = f.color;
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.size * (0.5 + k * 0.5), 0, Math.PI * 2); ctx.fill();
+      } else if (f.kind === 'ring') {
+        ctx.globalAlpha = k * 0.7;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3 * k;
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.size * (0.3 + (1 - k)), 0, Math.PI * 2); ctx.stroke();
+      } else if (f.kind === 'miss') {
+        ctx.globalAlpha = k;
+        ctx.strokeStyle = '#ffffff';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x + Math.cos(f.a) * 60 * (1 - k), f.y + Math.sin(f.a) * 60 * (1 - k)); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function bigText(text, x, y, size, color, alpha = 1, sub) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '900 ' + size + 'px ' + getComputedStyle(document.body).fontFamily;
+    ctx.lineWidth = size * 0.14;
+    ctx.strokeStyle = 'rgba(10,12,30,0.8)';
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+    if (sub) {
+      ctx.font = 'bold ' + Math.round(size * 0.32) + 'px ' + getComputedStyle(document.body).fontFamily;
+      ctx.lineWidth = 4;
+      ctx.strokeText(sub, x, y + size * 0.72);
+      ctx.fillStyle = '#dfe3ff';
+      ctx.fillText(sub, x, y + size * 0.72);
+    }
+    ctx.restore();
+  }
+
+  function overlay(m) {
+    const v = mapView(m.map), cx = v.x + v.w / 2, top = v.y, k0 = v.h / 650;
+    if (m.state === 'countdown' && !m.rules.ball) {
+      const n = Math.ceil(m.stateTime);
+      const frac = m.stateTime - Math.floor(m.stateTime);
+      if (n >= 1 && n <= 3) bigText(String(n), cx, top + v.h * 0.45, (90 + 30 * frac) * k0, '#ffffff', clamp(frac * 3, 0, 1));
+    }
+    if (m.banner) {
+      const b = m.banner;
+      const k = clamp(b.t / 0.25, 0, 1);
+      const y = top + v.h * (m.state === 'countdown' ? 0.25 : 0.38);
+      bigText(b.text, cx, y, (b.big ? 58 : 46) * k0 * (0.7 + 0.3 * k), b.color || '#ffffff', k, b.sub);
+    }
+    for (const t of m.texts) {
+      const k = 1 - t.t / t.life;
+      bigText(t.text, cx, top + v.h * (t.y / 650) - (1 - k) * 30, t.size * k0, t.color, clamp(k * 2, 0, 1));
+    }
+    const me = m.me;
+    if (me && !me.alive && m.state === 'play') bigText('You got bopped', cx, top + v.h * 0.17, 22 * k0, '#dfe3ff', 0.85, 'spectating until next round');
+  }
+
+  function drawMatch(m, alpha) {
+    resize(mapView(m.map));
+    background(m.time);
+    ctx.save();
+    let sx = 0, sy = 0;
+    if (settings.shake && m.shake > 0) { sx = rand(-1, 1) * m.shake * 8; sy = rand(-1, 1) * m.shake * 8; }
+    ctx.translate(ox + sx * scale, oy + sy * scale);
+    ctx.scale(scale, scale);
+    drawGoals(m.map);
+    drawShapes(m.world, alpha);
+    drawRopes(m, alpha);
+    if (m.ball && !m.ball.dead) drawBall(m.ball, alpha);
+    for (const p of m.players) if (p.alive && !p.info.isMe) drawPlayer(m, p, alpha);
+    const me = m.me;
+    if (me && me.alive) drawPlayer(m, me, alpha);
+    drawArrows(m);
+    drawFx(m);
+    overlay(m);
+    ctx.restore();
+  }
+
+  // menu backdrop: a few balls drifting about
+  const deco = [];
+  function drawMenuBg(dt) {
+    resize();
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#262d5c'); g.addColorStop(1, '#161a38');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (!deco.length) for (let i = 0; i < 14; i++) deco.push({ x: rand(0, 1000), y: rand(0, 650), vx: rand(-30, 30), vy: rand(-20, 20), r: rand(10, 34), a: 0, skin: randomSkin() });
+    ctx.save(); ctx.translate(ox, oy); ctx.scale(scale, scale);
+    ctx.globalAlpha = 0.28;
+    for (const d of deco) {
+      d.x += d.vx * dt; d.y += d.vy * dt; d.a += d.vx * dt / d.r;
+      if (d.x < -40) d.x = 1040; if (d.x > 1040) d.x = -40; if (d.y < -40) d.y = 690; if (d.y > 690) d.y = -40;
+      drawSkin(ctx, d.x, d.y, d.r, d.a, d.skin, false);
+    }
+    ctx.restore();
+  }
+
+  // map editor: draws the backdrop and shapes, leaves the context in world space for the editor's own overlays
+  function editorBegin(view, defs) {
+    resize(view);
+    background(0);
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(scale, scale);
+    drawShapes({ shapes: defs.map(d => new Shape(d)) }, 1);
+    return ctx;
+  }
+  function editorEnd() { ctx.restore(); }
+  function toWorld(clientX, clientY) {
+    const r = canvas.getBoundingClientRect();
+    return [((clientX - r.left) * dpr - ox) / scale, ((clientY - r.top) * dpr - oy) / scale];
+  }
+
+  return { drawMatch, drawMenuBg, resize, editorBegin, editorEnd, toWorld };
+})();
+</script>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- screens
+
+let screen = 'title';
+function show(id) {
+  for (const s of document.querySelectorAll('.screen')) s.classList.toggle('on', s.id === 's-' + id);
+  screen = id;
+}
+function loading(text, ms) {
+  return new Promise(res => {
+    $('loader-text').textContent = text;
+    $('loader').classList.add('on');
+    setTimeout(() => { $('loader').classList.remove('on'); res(); }, ms);
+  });
+}
+let toastTimer = 0;
+function toast(text) {
+  const t = $('toast');
+  t.textContent = text;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.style.display = 'none', 2600);
+}
+document.addEventListener('click', e => { if (e.target.closest('button')) { Sound.init(); Sound.click(); } });
+
+// ---------------------------------------------------------------- me
+
+function myInfo() {
+  return {
+    id: 'me', name: profile.name, level: levelFromXp(profile.xp).level, skin: profile.skin,
+    isMe: true, isBot: false, team: 'red', ping: irand(28, 45)
+  };
+}
+
+function paintMe() {
+  const c = $('me-skin'), g = c.getContext('2d');
+  g.clearRect(0, 0, c.width, c.height);
+  drawSkin(g, 46, 46, 40, 0, profile.skin);
+  const lv = levelFromXp(profile.xp);
+  $('me-name').textContent = profile.name;
+  $('me-level').textContent = 'Lv ' + lv.level;
+  $('me-xp').style.width = Math.round(lv.into / lv.need * 100) + '%';
+}
+
+// ---------------------------------------------------------------- the pretend server
+
+let onlineCount = irand(2400, 4300);
+setInterval(() => {
+  onlineCount = clamp(onlineCount + irand(-25, 25), 1800, 5200);
+  $('online-count').textContent = '● ' + onlineCount.toLocaleString() + ' players online';
+}, 4000);
+$('online-count').textContent = '● ' + onlineCount.toLocaleString() + ' players online';
+
+const MODE_WEIGHTS = { classic: 30, simple: 6, arrows: 16, deatharrows: 16, grapple: 10, vtol: 7, football: 15 };
+function weightedMode() {
+  let r = Math.random() * 100;
+  for (const k of MODE_KEYS) { r -= MODE_WEIGHTS[k]; if (r <= 0) return k; }
+  return 'classic';
+}
+
+function makeBot(taken) {
+  const name = botName(taken);
+  taken.add(name.toLowerCase());
+  return {
+    id: 'b' + Math.random().toString(36).slice(2, 8), name, level: botLevel(), skin: randomSkin(),
+    isBot: true, isMe: false, team: null, ping: irand(22, 210), skill: clamp(rand(0.25, 1) * rand(0.7, 1.15), 0.2, 0.95),
+    chatty: rand(0.2, 1)
+  };
+}
+
+let rooms = [];
+function makeRooms() {
+  rooms = [];
+  const used = new Set();
+  const n = irand(15, 22);
+  for (let i = 0; i < n; i++) {
+    let name = pick(ROOM_NAMES);
+    if (used.has(name)) name += ' ' + irand(2, 9);
+    used.add(name);
+    const mode = /football/.test(name) ? 'football' : /arrow|DA/.test(name) ? (/death|DA/.test(name) ? 'deatharrows' : 'arrows')
+      : /grapple/.test(name) ? 'grapple' : /vtol/.test(name) ? 'vtol' : weightedMode();
+    const max = mode === 'football' ? pick([4, 6]) : /1v1/.test(name) ? 2 : pick([4, 6, 8, 8]);
+    const count = clamp(irand(1, max), 1, max);
+    const maps = mapsFor(mode);
+    rooms.push({
+      id: i, name, mode, max, count, ping: irand(24, 190),
+      map: MAPS.indexOf(pick(maps)), rounds: pick([3, 3, 5, 2]), teams: mode === 'football' || chance(0.15),
+      playing: chance(0.45)
+    });
+  }
+}
+
+// ---------------------------------------------------------------- room list
+
+let selectedRoom = null;
+function fillRoomFilter() {
+  const f = $('room-filter');
+  for (const k of MODE_KEYS) { const o = document.createElement('option'); o.value = k; o.textContent = MODES[k].name; f.appendChild(o); }
+  const cm = $('cr-mode');
+  for (const k of MODE_KEYS) { const o = document.createElement('option'); o.value = k; o.textContent = MODES[k].name; cm.appendChild(o); }
+}
+
+function pingClass(p) { return p < 80 ? 'ping-g' : p < 150 ? 'ping-y' : 'ping-r'; }
+
+function drawRooms() {
+  const filter = $('room-filter').value;
+  const body = $('rooms-body');
+  body.innerHTML = '';
+  for (const r of rooms) {
+    if (filter !== 'all' && r.mode !== filter) continue;
+    const tr = document.createElement('tr');
+    tr.className = 'room' + (r.count >= r.max ? ' full' : '') + (selectedRoom === r ? ' sel' : '');
+    tr.innerHTML = '<td>' + esc(r.name) + (r.playing ? ' <span class="tag">playing</span>' : '') + '</td><td>' + r.count + '/' + r.max +
+      '</td><td>' + MODES[r.mode].name + '</td><td>' + esc(MAPS[r.map].name) + '</td><td class="' + pingClass(r.ping) + '">' + r.ping + 'ms</td>';
+    tr.onclick = () => { selectedRoom = r; drawRooms(); };
+    tr.ondblclick = () => { selectedRoom = r; joinRoom(r); };
+    body.appendChild(tr);
+  }
+}
+
+// rooms tick over a little while you look at them
+setInterval(() => {
+  if (screen !== 'rooms') return;
+  for (const r of rooms) {
+    if (chance(0.15)) r.count = clamp(r.count + pick([-1, 1]), 1, r.max);
+    if (chance(0.05)) r.playing = !r.playing;
+    r.ping = clamp(r.ping + irand(-6, 6), 18, 260);
+  }
+  if (chance(0.08) && rooms.length > 8) rooms.splice(irand(0, rooms.length - 1), 1);
+  drawRooms();
+}, 2500);
+
+// ---------------------------------------------------------------- lobby
+
+let room = null;        // the room we're in
+let match = null;
+let sim = null;         // timers that make the bots act like people
+
+function joinRoom(r) {
+  if (r.count >= r.max) { toast('That room is full'); return; }
+  loading('Joining ' + r.name, irand(500, 1100)).then(() => {
+    const taken = new Set([profile.name.toLowerCase()]);
+    const players = [];
+    for (let i = 0; i < r.count; i++) players.push(makeBot(taken));
+    players[0].host = true;
+    const me = myInfo();
+    players.push(me);
+    room = { name: r.name, mode: r.mode, map: r.map, max: r.max, rounds: r.rounds, teams: r.teams, players, taken, randomMap: false, src: r };
+    if (room.teams) assignTeams();
+    enterLobby(true);
+  });
+}
+
+function createRoom() {
+  const mode = $('cr-mode').value;
+  const max = +$('cr-max').value;
+  const name = $('cr-name').value.trim() || profile.name + "'s room";
+  loading('Creating room', 600).then(() => {
+    const me = myInfo();
+    me.host = true;
+    room = { name, mode, map: MAPS.indexOf(mapsFor(mode)[0]), max, rounds: 3, teams: MODES[mode].teams || false, players: [me], taken: new Set([profile.name.toLowerCase()]), randomMap: false };
+    enterLobby(false);
+  });
+}
+
+function quickPlay() {
+  let open = rooms.filter(r => r.count < r.max && r.count >= 2 && r.mode !== 'vtol');
+  if (!open.length) { makeRooms(); open = rooms.filter(r => r.count < r.max); }
+  const r = pick(open);
+  r.playing = false;
+  joinRoom(r);
+}
+
+function host() { return room.players.find(p => p.host); }
+function iAmHost() { return host() && host().isMe; }
+
+function assignTeams() {
+  let red = 0, blue = 0;
+  for (const p of room.players) {
+    if (p.team === 'red') red++; else if (p.team === 'blue') blue++;
+  }
+  for (const p of room.players) {
+    if (p.team === 'red' || p.team === 'blue') continue;
+    if (red <= blue) { p.team = 'red'; red++; } else { p.team = 'blue'; blue++; }
+  }
+}
+
+function enterLobby(joined) {
+  show('lobby');
+  $('chat-log').innerHTML = '';
+  sysMsg(joined ? 'You joined ' + room.name : 'Room created. Other players can find it in the room list.');
+  sim = {
+    nextJoin: rand(2, 6), nextLeave: rand(40, 90), nextChat: rand(3, 8),
+    startIn: iAmHost() ? Infinity : rand(9, 18), pokeHost: rand(20, 35)
+  };
+  if (joined && room.players.length > 1) {
+    const greeters = shuffle(room.players.filter(p => p.isBot)).slice(0, irand(0, 2));
+    greeters.forEach((b, i) => setTimeout(() => room && botSay(b, pick(CHAT.welcome).replace('{n}', profile.name)), 900 + i * 1400 + rand(0, 900)));
+  }
+  refreshLobby();
+}
+
+function leaveRoom() {
+  if (match) match = null;
+  $('esc-menu').classList.remove('on');
+  const fromEditor = room && room.fromEditor;
+  room = null; sim = null;
+  if (fromEditor) { Editor.open(); return; }
+  show('rooms');
+  makeRooms();
+  drawRooms();
+}
+
+function refreshLobby() {
+  if (!room) return;
+  $('lobby-title').textContent = room.name;
+  $('lobby-count').textContent = room.players.length + '/' + room.max;
+  const box = $('lobby-players');
+  box.innerHTML = '';
+  const teams = room.teams || MODES[room.mode].teams;
+  const cols = teams ? [['red', 'Red team'], ['blue', 'Blue team']] : [['all', 'Players']];
+  for (const [key, title] of cols) {
+    const col = document.createElement('div');
+    col.className = 'team-col';
+    const list = room.players.filter(p => key === 'all' || p.team === key);
+    col.innerHTML = '<h4><span>' + title + '</span><span>' + list.length + '</span></h4>';
+    for (const p of list) col.appendChild(playerRow(p, teams));
+    if (key === 'all') for (let i = list.length; i < room.max; i++) {
+      const e = document.createElement('div'); e.className = 'pl empty-slot'; e.textContent = 'open slot'; col.appendChild(e);
+    }
+    box.appendChild(col);
+  }
+
+  // settings bar
+  const hostMe = iAmHost();
+  const ms = $('lb-mode');
+  if (!ms.options.length) for (const k of MODE_KEYS) { const o = document.createElement('option'); o.value = k; o.textContent = MODES[k].name; ms.appendChild(o); }
+  ms.value = room.mode;
+  const mp = $('lb-map');
+  mp.innerHTML = '';
+  const ro = document.createElement('option'); ro.value = -1; ro.textContent = 'Random'; mp.appendChild(ro);
+  for (const m of mapsFor(room.mode, true)) { const o = document.createElement('option'); o.value = MAPS.indexOf(m); o.textContent = m.name; mp.appendChild(o); }
+  mp.value = room.randomMap ? -1 : room.map;
+  $('lb-rounds').value = room.rounds;
+  $('lb-teams').value = teams ? 1 : 0;
+  for (const id of ['lb-mode', 'lb-map', 'lb-rounds', 'lb-teams']) $(id).disabled = !hostMe;
+  $('lb-teams').disabled = !hostMe || !!MODES[room.mode].teams;
+  $('team-btns').style.display = teams ? '' : 'none';
+  $('b-start').style.display = hostMe ? '' : 'none';
+  $('b-start').disabled = room.players.length < 2;
+  $('start-note').textContent = hostMe ? (room.players.length < 2 ? 'waiting for players' : '') : 'waiting for ' + host().name + ' to start';
+}
+
+function playerRow(p, teams) {
+  const d = document.createElement('div');
+  d.className = 'pl' + (p.isMe ? ' me' : '') + (teams && p.team ? ' ' + p.team : '');
+  const c = document.createElement('canvas');
+  c.width = c.height = 60;
+  drawSkin(c.getContext('2d'), 30, 30, 26, 0, p.skin);
+  d.appendChild(c);
+  const nm = document.createElement('div');
+  nm.className = 'nm';
+  nm.innerHTML = (p.host ? '<span class="crown">♛</span> ' : '') + esc(p.name) + ' <span class="lv">Lv ' + p.level + '</span>';
+  d.appendChild(nm);
+  const pg = document.createElement('div');
+  pg.className = 'pg ' + pingClass(p.ping);
+  pg.textContent = p.ping + 'ms';
+  d.appendChild(pg);
+  return d;
+}
+
+// ---------------------------------------------------------------- chat
+
+function addLine(html, cls) {
+  const log = $('chat-log');
+  const div = document.createElement('div');
+  if (cls) div.className = cls;
+  div.innerHTML = html;
+  log.appendChild(div);
+  while (log.children.length > 120) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+  if (match && settings.chat) gameLine(html, cls);
+}
+function sysMsg(text) { addLine('* ' + esc(text), 'sys'); }
+function chatMsg(p, text) {
+  const col = p.isMe ? '#5ee6a8' : (p.skin.base === '#22253a' || p.skin.base === '#4a4f6d' ? '#c9cfe8' : p.skin.base);
+  addLine('<b style="color:' + col + '">' + esc(p.name) + ':</b> ' + esc(text));
+  if (!p.isMe) Sound.blip();
+}
+function botSay(b, text) {
+  if (!room || !room.players.includes(b)) return;
+  chatMsg(b, text);
+}
+// a bot "types" for a moment before the message shows up
+function botSayLater(b, text, min = 0.6, max = 2.2) { setTimeout(() => botSay(b, text), rand(min, max) * 1000); }
+
+function gameLine(html, cls) {
+  const box = $('hud-chat');
+  const div = document.createElement('div');
+  div.className = 'ln' + (cls ? ' ' + cls : '');
+  div.innerHTML = html;
+  box.appendChild(div);
+  while (box.children.length > 6) box.removeChild(box.firstChild);
+  setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 700); }, 8000);
+}
+
+function sendChat(text) {
+  text = text.trim();
+  if (!text || !room) return;
+  const me = room.players.find(p => p.isMe);
+  chatMsg(me, text);
+  replyTo(text);
+}
+
+// bots sometimes answer what you say
+function replyTo(text) {
+  const t = text.toLowerCase();
+  const bots = room.players.filter(p => p.isBot);
+  if (!bots.length) return;
+  const b = pick(bots);
+  let reply = null;
+  if (/^(hi|hey|hello|yo|sup|hii+)\b/.test(t)) reply = pick(['hi', 'hey', 'hello', 'yo', 'hi ' + profile.name]);
+  else if (/\bgg\b/.test(t)) reply = pick(['gg', 'gg wp', 'ggs']);
+  else if (/start/.test(t)) reply = iAmHost() ? pick(['yes pls', 'start!!', 'yea']) : null;
+  else if (/(arrows|grapple|vtol|football|classic|simple)/.test(t)) reply = pick(['ok', 'sure', 'yes', 'nah', 'yesss', 'fine']);
+  else if (/\?$/.test(t)) reply = pick(['idk', 'yes', 'no', 'maybe', 'lol', 'what']);
+  else if (/(lol|haha|xd|lmao)/.test(t)) reply = chance(0.5) ? pick(['lol', 'xd', 'haha']) : null;
+  if (reply && chance(0.75)) botSayLater(b, reply, 1, 3);
+}
+
+// ---------------------------------------------------------------- bots living in the room
+
+function simTick(dt) {
+  if (!room || !sim) return;
+  const bots = room.players.filter(p => p.isBot);
+  const inGame = !!match;
+
+  sim.nextJoin -= dt;
+  if (sim.nextJoin <= 0) {
+    sim.nextJoin = rand(6, 22) * (room.players.length < 3 ? 0.5 : 1);
+    const fill = room.players.length / room.max;
+    if (room.players.length < room.max && chance(1 - fill * 0.6)) {
+      const b = makeBot(room.taken);
+      if (room.teams || MODES[room.mode].teams) { b.team = null; room.players.push(b); assignTeams(); }
+      else room.players.push(b);
+      sysMsg(b.name + ' joined the game');
+      Sound.join();
+      if (chance(0.4)) botSayLater(b, pick(CHAT.hello), 1.5, 4);
+      if (!inGame) refreshLobby();
+      else sysMsg(b.name + ' will play next round');
+    }
+  }
+
+  sim.nextLeave -= dt;
+  if (sim.nextLeave <= 0) {
+    sim.nextLeave = rand(45, 120);
+    const leaver = bots.filter(b => !b.host);
+    if (leaver.length && room.players.length > 3 && chance(0.6)) {
+      const b = pick(leaver);
+      if (chance(0.3)) botSay(b, pick(['bye', 'gtg', 'cya', 'bye guys', 'gotta go']));
+      setTimeout(() => removeFromRoom(b), rand(500, 2500));
+    }
+  }
+
+  sim.nextChat -= dt;
+  if (sim.nextChat <= 0 && bots.length) {
+    sim.nextChat = rand(7, 20) / Math.sqrt(bots.length);
+    const b = pick(bots);
+    if (chance(b.chatty * 0.6)) {
+      let line;
+      if (!inGame && iAmHost() && chance(0.4)) line = pick(CHAT.waiting);
+      else if (!inGame && chance(0.25)) line = CHAT.modeAsk[pick(MODE_KEYS)];
+      else line = pick(CHAT.chatter);
+      botSay(b, line);
+    }
+  }
+
+  if (!inGame) {
+    // a bot host starts the game after a while, sometimes switching modes first
+    const h = host();
+    if (h && h.isBot && room.players.length >= 2) {
+      sim.startIn -= dt;
+      if (sim.startIn < 4 && !sim.switched && chance(0.008)) {
+        sim.switched = true;
+        if (chance(0.5)) {
+          room.mode = pick(MODE_KEYS.filter(m => m !== 'vtol' || chance(0.3)));
+          room.teams = !!MODES[room.mode].teams || (chance(0.2) && room.players.length >= 4);
+          room.map = MAPS.indexOf(pick(mapsFor(room.mode)));
+          if (room.teams) assignTeams();
+          botSay(h, pick(['switching to ', 'lets do ', 'ok ', '']) + MODES[room.mode].name.toLowerCase());
+        } else room.map = MAPS.indexOf(pick(mapsFor(room.mode)));
+        refreshLobby();
+      }
+      if (sim.startIn <= 0) startMatch();
+    }
+    if (iAmHost()) {
+      sim.pokeHost -= dt;
+      if (sim.pokeHost <= 0 && bots.length) {
+        sim.pokeHost = rand(18, 30);
+        botSay(pick(bots), pick(CHAT.waiting));
+      }
+    }
+    // pings wobble
+    if (chance(dt * 0.5)) {
+      for (const p of room.players) p.ping = clamp(p.ping + irand(-8, 8), p.isMe ? 22 : 18, 260);
+      refreshLobby();
+    }
+  }
+}
+
+function removeFromRoom(b) {
+  if (!room || !room.players.includes(b)) return;
+  room.players.splice(room.players.indexOf(b), 1);
+  sysMsg(b.name + ' left the game');
+  Sound.leave();
+  if (match) match.removePlayer(b);
+  if (b.host) {
+    const next = room.players.find(p => p.isBot) || room.players.find(p => p.isMe);
+    if (next) {
+      next.host = true;
+      sysMsg(next.name + ' is now the host');
+      if (sim) sim.startIn = rand(10, 20);
+    }
+  }
+  if (!match) refreshLobby();
+}
+
+// ---------------------------------------------------------------- matches
+
+function startMatch() {
+  if (!room || room.players.length < 2) return;
+  if (room.randomMap) room.map = MAPS.indexOf(pick(mapsFor(room.mode)));
+  if (room.teams || MODES[room.mode].teams) assignTeams();
+  match = new Match(room, {
+    onDeath(p, by, how) {
+      if (p.info.isBot && chance(0.22 * p.info.chatty)) botSayLater(p.info, pick(CHAT.died), 0.4, 1.6);
+      if (by && by.info.isBot && by !== p && chance(0.12 * by.info.chatty)) botSayLater(by.info, pick(CHAT.hit), 0.5, 2);
+      if (p.info.isMe && by && by.info.isBot && chance(0.15)) botSayLater(by.info, pick(['lol', 'sorry', 'oops', 'haha']), 0.5, 1.8);
+    },
+    onArrowHit(from, to, deadly) {
+      if (from !== to && to.info.isBot && from.info.isMe && chance(0.12)) botSayLater(to.info, pick(['nice shot', 'wow', 'how', 'ow']), 0.4, 1.5);
+    },
+    onRoundEnd(winner) {
+      if (winner && winner.info.isBot && chance(0.2 * winner.info.chatty)) botSayLater(winner.info, pick(CHAT.roundWin), 0.3, 1.2);
+    },
+    onMatchEnd(m) { finishMatch(m); },
+    onOver() { backToLobby(); }
+  });
+  $('hud-chat').innerHTML = '';
+  $('hud-mode').textContent = MODES[room.mode].name + ' · ' + MAPS[room.map].name + ' · first to ' + room.rounds;
+  $('hud-hint').innerHTML = hintFor(room.mode);
+  show('game');
+  if (src()) src().playing = true;
+}
+function src() { return room && room.src; }
+
+function hintFor(mode) {
+  const base = 'arrows move · ';
+  switch (mode) {
+    case 'simple': return 'arrows move';
+    case 'arrows': case 'deatharrows': return base + 'X heavy · hold Z to shoot, ←→ aim';
+    case 'grapple': return base + 'X heavy · hold Z to grapple';
+    case 'vtol': return '←→ turn · ↑ thrust · X heavy';
+    default: return base + 'X heavy';
+  }
+}
+
+function finishMatch(m) {
+  const me = m.me;
+  if (me) {
+    const won = m.teams ? me.team === m.winnerTeam : m.winner === me;
+    const gain = 15 + me.wins * 20 + (won ? 60 : 0);
+    const before = levelFromXp(profile.xp).level;
+    profile.xp += gain;
+    saveProfile();
+    const after = levelFromXp(profile.xp).level;
+    setTimeout(() => toast('+' + gain + ' XP' + (after > before ? '  ·  level ' + after + '!' : '')), 900);
+  }
+  const bots = room.players.filter(p => p.isBot);
+  shuffle(bots).slice(0, irand(1, Math.min(4, bots.length))).forEach(b => botSayLater(b, pick(CHAT.gg), 0.8, 4));
+}
+
+function backToLobby() {
+  match = null;
+  if (!room) return;
+  const me = room.players.find(p => p.isMe);
+  if (me) me.level = levelFromXp(profile.xp).level;
+  show('lobby');
+  sim.startIn = iAmHost() ? Infinity : rand(10, 20);
+  sim.switched = false;
+  refreshLobby();
+}
+
+// ---------------------------------------------------------------- input
+
+const keys = {};
+const KEYMAP = {
+  ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
+  KeyX: 'heavy', ShiftLeft: 'heavy', ShiftRight: 'heavy', KeyZ: 'special', Space: 'special'
+};
+function typing() { const a = document.activeElement; return a && (a.tagName === 'INPUT' || a.tagName === 'SELECT') && a.type !== 'range'; }
+
+window.addEventListener('keydown', e => {
+  Sound.init();
+  if (screen === 'game') {
+    const ci = $('game-chat-in');
+    if (e.code === 'Enter') {
+      if (document.activeElement === ci) { sendChat(ci.value); ci.value = ''; ci.blur(); ci.style.display = 'none'; }
+      else { ci.style.display = 'block'; ci.focus(); clearKeys(); }
+      e.preventDefault();
+      return;
+    }
+    if (e.code === 'Escape') {
+      if (document.activeElement === ci) { ci.value = ''; ci.blur(); ci.style.display = 'none'; }
+      else $('esc-menu').classList.toggle('on');
+      e.preventDefault();
+      return;
+    }
+  }
+  if (screen === 'lobby' && e.code === 'Enter' && document.activeElement !== $('chat-in')) { $('chat-in').focus(); e.preventDefault(); return; }
+  if (typing()) return;
+  if (KEYMAP[e.code]) { keys[KEYMAP[e.code]] = true; e.preventDefault(); }
+});
+window.addEventListener('keyup', e => { if (KEYMAP[e.code]) keys[KEYMAP[e.code]] = false; });
+window.addEventListener('blur', clearKeys);
+function clearKeys() { for (const k in keys) keys[k] = false; }
+
+$('chat-in').addEventListener('keydown', e => {
+  if (e.code === 'Enter') { sendChat(e.target.value); e.target.value = ''; e.preventDefault(); }
+  if (e.code === 'Escape') e.target.blur();
+});
+
+// ---------------------------------------------------------------- hud
+
+function updateHud() {
+  if (!match) return;
+  const top = $('hud-top');
+  let html = '';
+  if (match.teams) {
+    html += '<div class="chip"><i style="background:#ff5d6c"></i>Red <b>' + match.teamWins.red + '</b></div>';
+    html += '<div class="chip"><i style="background:#4f8dff"></i>Blue <b>' + match.teamWins.blue + '</b></div>';
+  }
+  for (const p of match.players) {
+    const team = match.teams ? ' style="box-shadow: inset 0 0 0 2px ' + (p.team === 'red' ? '#ff5d6c' : '#4f8dff') + '"' : '';
+    html += '<div class="chip' + (p.alive || match.rules.ball ? '' : ' dead') + '"' + team + '><i style="background:' + p.info.skin.base + '"></i>' +
+      esc(p.info.name) + (match.teams ? '' : ' <b>' + p.wins + '</b>') + '</div>';
+  }
+  if (settings.fps) html += '<div class="chip">' + fpsShown + ' fps</div>';
+  top.innerHTML = html;
+}
+
+// ---------------------------------------------------------------- skins screen
+
+let skinBack = 'menu';
+function openSkins(back) {
+  skinBack = back;
+  show('skins');
+  const make = (box, list, key) => {
+    box.innerHTML = '';
+    for (const c of list) {
+      const d = document.createElement('div');
+      d.className = 'sw' + (profile.skin[key] === c ? ' sel' : '');
+      d.style.background = c;
+      d.onclick = () => { profile.skin[key] = c; saveProfile(); openSkins(skinBack); };
+      box.appendChild(d);
+    }
+  };
+  make($('sw-base'), SKIN_COLORS, 'base');
+  make($('sw-alt'), SKIN_COLORS, 'alt');
+  const pb = $('sw-pat');
+  pb.innerHTML = '';
+  for (const p of PATTERNS) {
+    const d = document.createElement('div');
+    d.className = 'pat' + (profile.skin.pattern === p ? ' sel' : '');
+    d.textContent = p;
+    d.onclick = () => { profile.skin.pattern = p; saveProfile(); openSkins(skinBack); };
+    pb.appendChild(d);
+  }
+}
+
+// ---------------------------------------------------------------- buttons
+
+function bind(id, fn) { $(id).addEventListener('click', fn); }
+
+bind('b-play', () => {
+  const n = $('name-in').value.trim().replace(/\s+/g, ' ');
+  if (n.length < 2) { toast('Pick a name with at least 2 letters'); return; }
+  profile.name = n.slice(0, 16);
+  if (!profile.skin) profile.skin = randomSkin();
+  saveProfile();
+  loading('Connecting', 700).then(() => { paintMe(); show('menu'); });
+});
+$('name-in').addEventListener('keydown', e => { if (e.code === 'Enter') $('b-play').click(); });
+bind('b-title-skins', () => { if (!profile.skin) { profile.skin = randomSkin(); saveProfile(); } openSkins('title'); });
+bind('b-title-help', () => { helpBack = 'title'; show('help'); });
+bind('b-title-settings', () => { settingsBack = 'title'; openSettings(); });
+
+bind('b-quick', () => { if (!rooms.length) makeRooms(); quickPlay(); });
+bind('b-custom', () => { loading('Finding rooms', 500).then(() => { makeRooms(); selectedRoom = null; show('rooms'); drawRooms(); }); });
+bind('b-skins', () => openSkins('menu'));
+bind('b-settings', () => { settingsBack = 'menu'; openSettings(); });
+bind('b-help', () => { helpBack = 'menu'; show('help'); });
+bind('b-logout', () => { $('name-in').value = profile.name; show('title'); });
+
+bind('b-rooms-back', () => { paintMe(); show('menu'); });
+bind('b-refresh', () => { makeRooms(); selectedRoom = null; drawRooms(); });
+$('room-filter').addEventListener('change', drawRooms);
+bind('b-join', () => { if (selectedRoom) joinRoom(selectedRoom); else toast('Pick a room first'); });
+bind('b-create', () => { $('cr-name').value = profile.name + "'s room"; show('create'); });
+bind('b-create-cancel', () => show('rooms'));
+bind('b-create-ok', createRoom);
+
+bind('b-leave', leaveRoom);
+bind('b-start', () => startMatch());
+$('lb-mode').addEventListener('change', e => {
+  room.mode = e.target.value;
+  if (!MAPS[room.map].modes.includes(room.mode)) room.map = MAPS.indexOf(mapsFor(room.mode)[0]);
+  room.randomMap = false;
+  if (MODES[room.mode].teams) room.teams = true;
+  if (room.teams) assignTeams();
+  sysMsg('Mode changed to ' + MODES[room.mode].name);
+  if (chance(0.5)) { const b = room.players.find(p => p.isBot); if (b) botSayLater(b, pick(['nice', 'ok', 'yay', 'ooh', 'yes'])); }
+  refreshLobby();
+});
+$('lb-map').addEventListener('change', e => {
+  const v = +e.target.value;
+  room.randomMap = v < 0;
+  if (v >= 0) room.map = v;
+  sysMsg('Map changed to ' + (v < 0 ? 'random' : MAPS[v].name));
+  refreshLobby();
+});
+$('lb-rounds').addEventListener('change', e => { room.rounds = +e.target.value; sysMsg('Now playing to ' + room.rounds + ' wins'); });
+$('lb-teams').addEventListener('change', e => {
+  room.teams = e.target.value === '1';
+  if (room.teams) assignTeams(); else for (const p of room.players) p.team = null;
+  sysMsg('Teams ' + (room.teams ? 'on' : 'off'));
+  refreshLobby();
+});
+bind('b-team-red', () => { room.players.find(p => p.isMe).team = 'red'; refreshLobby(); });
+bind('b-team-blue', () => { room.players.find(p => p.isMe).team = 'blue'; refreshLobby(); });
+
+bind('hud-esc', () => $('esc-menu').classList.toggle('on'));
+bind('b-esc-resume', () => $('esc-menu').classList.remove('on'));
+bind('b-esc-help', () => { $('esc-menu').classList.remove('on'); toast(hintFor(room ? room.mode : 'classic').replace(/<[^>]+>/g, '')); });
+bind('b-esc-leave', () => { if (room) sysMsg('You left'); leaveRoom(); });
+
+bind('b-skin-random', () => { profile.skin = randomSkin(); saveProfile(); openSkins(skinBack); });
+bind('b-skin-done', () => { if (skinBack === 'menu') { paintMe(); show('menu'); } else show('title'); });
+
+let settingsBack = 'menu', helpBack = 'menu';
+function openSettings() {
+  $('set-vol').value = settings.volume;
+  $('set-chat').value = settings.chat;
+  $('set-names').value = settings.names;
+  $('set-shake').value = settings.shake;
+  $('set-fps').value = settings.fps;
+  show('settings');
+}
+$('set-vol').addEventListener('input', e => { settings.volume = +e.target.value; Sound.init(); Sound.setVolume(); saveSettings(); });
+for (const [id, key] of [['set-chat', 'chat'], ['set-names', 'names'], ['set-shake', 'shake'], ['set-fps', 'fps']])
+  $(id).addEventListener('change', e => { settings[key] = +e.target.value; saveSettings(); });
+bind('b-settings-done', () => { if (settingsBack === 'menu') { paintMe(); show('menu'); } else show('title'); });
+bind('b-help-done', () => { if (helpBack === 'menu') show('menu'); else show('title'); });
+
+// ---------------------------------------------------------------- main loop
+
+let last = performance.now(), acc = 0, hudTimer = 0, skinSpin = 0;
+let fpsFrames = 0, fpsTime = 0, fpsShown = 0;
+
+function frame(now) {
+  let dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  fpsFrames++; fpsTime += dt;
+  if (fpsTime > 0.5) { fpsShown = Math.round(fpsFrames / fpsTime); fpsFrames = 0; fpsTime = 0; }
+
+  simTick(dt);
+
+  if (match && screen === 'game') {
+    const me = match.me;
+    if (me) {
+      const typingNow = document.activeElement === $('game-chat-in');
+      for (const k of ['left', 'right', 'up', 'down', 'heavy', 'special']) me.input[k] = !typingNow && !!keys[k];
+    }
+    acc += dt;
+    while (acc >= PHYS.step) { match.update(PHYS.step); acc -= PHYS.step; if (!match) break; }
+    if (match) Render.drawMatch(match, acc / PHYS.step);
+    hudTimer -= dt;
+    if (hudTimer <= 0) { hudTimer = 0.2; updateHud(); }
+  } else {
+    acc = 0;
+    if (screen === 'editor') Editor.draw();
+    else Render.drawMenuBg(dt);
+  }
+
+  if (screen === 'skins') {
+    skinSpin += dt * 1.2;
+    const c = $('skin-canvas'), g = c.getContext('2d');
+    g.clearRect(0, 0, c.width, c.height);
+    drawSkin(g, 260, 250, 150, Math.sin(skinSpin) * 1.2, profile.skin);
+    g.font = 'bold 30px ' + getComputedStyle(document.body).fontFamily;
+    g.textAlign = 'center'; g.fillStyle = '#ffffff';
+    g.fillText(profile.name || 'you', 260, 460);
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- start up
+
+loadCustomMaps();
+fillRoomFilter();
+makeRooms();
+if (profile.name) $('name-in').value = profile.name;
+if (!profile.skin) { profile.skin = randomSkin(); saveProfile(); }
+show('title');
+requestAnimationFrame(frame);
+</script>
+<script>
+'use strict';
+
+// ---------------------------------------------------------------- map editor
+// Shapes are kept in the same plain format the built-in maps use (R / C defs), so a saved
+// map drops straight into MAPS and plays like any other one.
+
+const Editor = (() => {
+  const VIEW = { x: -60, y: -100, w: 1120, h: 920 };
+  const SNAP = 10;
+  const MAX_SPAWNS = 8;
+  const MAX_MAPS = 30;
+  const COLORS = [COL.plat, COL.plat2, COL.plat3, COL.dark, COL.wood, COL.grass];
+  const canvas = $('game');
+
+  let map = null;          // { id, name, shapes, spawns }
+  let tool = 'select';
+  let sel = null;          // { kind: 'shape' | 'spawn', i }
+  let drag = null;         // what the mouse is doing right now
+  let mouse = [0, 0];
+  let history = [];
+
+  const snap = v => Math.round(v / SNAP) * SNAP;
+  const savedMaps = () => store.get('maps', []);
+  const selShape = () => sel && sel.kind === 'shape' ? map.shapes[sel.i] : null;
+
+  function blank() {
+    return { id: 'm' + Date.now().toString(36), name: '', shapes: [R(500, 470, 600, 40)], spawns: row(4, 320, 680, 420) };
+  }
+
+  function copy(o) { return JSON.parse(JSON.stringify(o)); }
+
+  // ------------------------------------------------ undo + draft
+
+  function remember() {
+    history.push(JSON.stringify(map));
+    if (history.length > 60) history.shift();
+  }
+  function undo() {
+    if (!history.length) return;
+    map = JSON.parse(history.pop());
+    sel = null;
+    changed();
+  }
+  function changed() {
+    store.set('mapDraft', map);
+    refreshProps();
+  }
+
+  // ------------------------------------------------ surfaces
+
+  function surfaceOf(s) {
+    if (s.death) return 'death';
+    if (s.bounce != null) return 'bouncy';
+    if (s.fric != null) return 'ice';
+    if (s.nograpple) return 'nograpple';
+    return 'normal';
+  }
+  function setSurface(s, kind) {
+    const wasSpecial = s.death || s.bounce != null || s.fric != null;
+    delete s.death; delete s.bounce; delete s.fric; delete s.nograpple;
+    if (kind === 'death') { s.death = true; s.color = COL.death; }
+    else if (kind === 'bouncy') { s.bounce = 1.1; s.color = COL.bounce; }
+    else if (kind === 'ice') { s.fric = 0.01; s.color = COL.ice; }
+    else {
+      if (kind === 'nograpple') s.nograpple = true;
+      if (wasSpecial) s.color = kind === 'nograpple' ? COL.dark : COL.plat;
+    }
+  }
+
+  function motionOf(s) {
+    if (s.spin) return 'spin';
+    if (s.move) return s.move.dx ? 'x' : 'y';
+    return 'none';
+  }
+  function setMotion(s, kind) {
+    delete s.move; delete s.spin;
+    if (kind === 'x') s.move = { dx: 160, dy: 0, period: 4 };
+    else if (kind === 'y') s.move = { dx: 0, dy: -140, period: 5 };
+    else if (kind === 'spin') s.spin = 0.6;
+  }
+
+  // ------------------------------------------------ hit testing
+
+  function toLocal(s, x, y) {
+    const c = Math.cos(-(s.a || 0)), sn = Math.sin(-(s.a || 0));
+    const dx = x - s.x, dy = y - s.y;
+    return [dx * c - dy * sn, dx * sn + dy * c];
+  }
+  function inside(s, x, y) {
+    if (s.t === 'circle') return Math.hypot(x - s.x, y - s.y) <= s.r;
+    const [lx, ly] = toLocal(s, x, y);
+    return Math.abs(lx) <= s.w / 2 + 3 && Math.abs(ly) <= s.h / 2 + 3;
+  }
+  function handlePos(s) {
+    if (s.t === 'circle') return [s.x + s.r, s.y];
+    const c = Math.cos(s.a || 0), sn = Math.sin(s.a || 0), hw = s.w / 2, hh = s.h / 2;
+    return [s.x + hw * c - hh * sn, s.y + hw * sn + hh * c];
+  }
+  function pickAt(x, y) {
+    for (let i = map.spawns.length - 1; i >= 0; i--) {
+      if (Math.hypot(x - map.spawns[i][0], y - map.spawns[i][1]) <= PHYS.playerRadius + 3) return { kind: 'spawn', i };
+    }
+    for (let i = map.shapes.length - 1; i >= 0; i--) if (inside(map.shapes[i], x, y)) return { kind: 'shape', i };
+    return null;
+  }
+
+  // ------------------------------------------------ mouse
+
+  function worldMouse(e) {
+    const [x, y] = Render.toWorld(e.clientX, e.clientY);
+    return [clamp(x, -40, 1040), clamp(y, -100, 740)];
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    if (screen !== 'editor' || e.button !== 0) return;
+    document.activeElement && document.activeElement.blur();
+    const [x, y] = worldMouse(e);
+    mouse = [x, y];
+    const s = selShape();
+
+    // resize handle on the selected shape wins over everything else
+    if (s && tool === 'select') {
+      const [hx, hy] = handlePos(s);
+      if (Math.hypot(x - hx, y - hy) < 12) { remember(); drag = { type: 'resize' }; return; }
+    }
+
+    if (tool === 'select') {
+      sel = pickAt(x, y);
+      if (sel) {
+        remember();
+        const it = sel.kind === 'shape' ? map.shapes[sel.i] : { x: map.spawns[sel.i][0], y: map.spawns[sel.i][1] };
+        drag = { type: 'move', dx: x - it.x, dy: y - it.y, moved: false };
+      }
+      refreshProps();
+    } else if (tool === 'rect' || tool === 'circle') {
+      drag = { type: tool, x0: snap(x), y0: snap(y) };
+    } else if (tool === 'spawn') {
+      if (map.spawns.length >= MAX_SPAWNS) { toast('8 spawns max, delete one first'); return; }
+      remember();
+      map.spawns.push([snap(x), snap(y)]);
+      sel = { kind: 'spawn', i: map.spawns.length - 1 };
+      Sound.blip();
+      changed();
+    }
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (screen !== 'editor') return;
+    const [x, y] = worldMouse(e);
+    mouse = [x, y];
+    if (!drag) return;
+    if (drag.type === 'move') {
+      const nx = snap(x - drag.dx), ny = snap(y - drag.dy);
+      if (sel.kind === 'shape') { const s = map.shapes[sel.i]; s.x = nx; s.y = ny; }
+      else map.spawns[sel.i] = [nx, ny];
+      drag.moved = true;
+    } else if (drag.type === 'resize') {
+      const s = selShape();
+      if (s.t === 'circle') s.r = Math.max(8, snap(Math.hypot(x - s.x, y - s.y)));
+      else {
+        const [lx, ly] = toLocal(s, x, y);
+        s.w = Math.max(10, snap(Math.abs(lx) * 2));
+        s.h = Math.max(10, snap(Math.abs(ly) * 2));
+      }
+      refreshProps();
+    }
+  });
+
+  window.addEventListener('mouseup', e => {
+    if (screen !== 'editor' || !drag) return;
+    const [x, y] = worldMouse(e);
+    const d = drag;
+    drag = null;
+    if (d.type === 'move' || d.type === 'resize') {
+      if (d.type === 'move' && !d.moved) history.pop();   // just a click, nothing to undo
+      changed();
+      return;
+    }
+    remember();
+    const x1 = snap(x), y1 = snap(y);
+    let shape;
+    if (d.type === 'rect') {
+      let w = Math.abs(x1 - d.x0), h = Math.abs(y1 - d.y0);
+      if (w < 10 || h < 10) shape = R(d.x0, d.y0, 160, 30);
+      else shape = R((d.x0 + x1) / 2, (d.y0 + y1) / 2, w, h);
+    } else {
+      const r = snap(Math.hypot(x1 - d.x0, y1 - d.y0));
+      shape = C(d.x0, d.y0, r < 10 ? 40 : r, { color: COL.plat3 });
+    }
+    map.shapes.push(shape);
+    sel = { kind: 'shape', i: map.shapes.length - 1 };
+    Sound.click();
+    changed();
+  });
+
+  // ------------------------------------------------ keys
+
+  window.addEventListener('keydown', e => {
+    if (screen !== 'editor' || typing()) return;
+    const ctrl = e.ctrlKey || e.metaKey;
+    const s = selShape();
+    if (ctrl && e.code === 'KeyZ') { undo(); e.preventDefault(); return; }
+    if (ctrl && e.code === 'KeyD') { duplicate(); e.preventDefault(); return; }
+    if (ctrl && e.code === 'KeyS') { save(); e.preventDefault(); return; }
+    if (ctrl) return;
+    switch (e.code) {
+      case 'KeyV': setTool('select'); break;
+      case 'KeyR': setTool('rect'); break;
+      case 'KeyC': setTool('circle'); break;
+      case 'KeyS': setTool('spawn'); break;
+      case 'Delete': case 'Backspace': removeSelected(); break;
+      case 'Escape': sel = null; refreshProps(); break;
+      case 'KeyQ': case 'KeyE':
+        if (s && s.t === 'rect') {
+          remember();
+          s.a = clamp(Math.round(((s.a || 0) * 180 / Math.PI + (e.code === 'KeyE' ? 15 : -15)) / 5) * 5, -90, 90) * Math.PI / 180;
+          changed();
+        }
+        break;
+      case 'ArrowLeft': case 'ArrowRight': case 'ArrowUp': case 'ArrowDown': {
+        if (!sel) return;
+        remember();
+        const dx = e.code === 'ArrowLeft' ? -SNAP : e.code === 'ArrowRight' ? SNAP : 0;
+        const dy = e.code === 'ArrowUp' ? -SNAP : e.code === 'ArrowDown' ? SNAP : 0;
+        if (s) { s.x += dx; s.y += dy; } else { map.spawns[sel.i][0] += dx; map.spawns[sel.i][1] += dy; }
+        changed();
+        break;
+      }
+      default: return;
+    }
+    e.preventDefault();
+  });
+
+  function setTool(t) {
+    tool = t;
+    for (const b of document.querySelectorAll('#ed-tools .tool')) b.classList.toggle('on', b.dataset.tool === t);
+  }
+
+  function removeSelected() {
+    if (!sel) return;
+    remember();
+    if (sel.kind === 'shape') map.shapes.splice(sel.i, 1);
+    else map.spawns.splice(sel.i, 1);
+    sel = null;
+    changed();
+  }
+
+  function duplicate() {
+    const s = selShape();
+    if (!s) return;
+    remember();
+    const c = copy(s);
+    c.x += 30; c.y -= 30;
+    map.shapes.push(c);
+    sel = { kind: 'shape', i: map.shapes.length - 1 };
+    changed();
+  }
+
+  // ------------------------------------------------ properties bar
+
+  const swatches = $('ed-colors');
+  for (const col of COLORS) {
+    const i = document.createElement('i');
+    i.style.background = col;
+    i.dataset.col = col;
+    i.addEventListener('click', () => {
+      const s = selShape();
+      if (!s || s.death || s.bounce != null || s.fric != null) return;
+      remember(); s.color = col; changed();
+    });
+    swatches.appendChild(i);
+  }
+
+  function refreshProps() {
+    const s = selShape();
+    $('ed-empty').style.display = sel ? 'none' : '';
+    $('ed-shape-props').style.display = s ? '' : 'none';
+    $('ed-spawn-props').style.display = sel && sel.kind === 'spawn' ? '' : 'none';
+    $('ed-count').textContent = map.shapes.length + ' shapes · ' + map.spawns.length + '/' + MAX_SPAWNS + ' spawns';
+    if (!s) return;
+    const rect = s.t === 'rect';
+    $('ed-w-l').style.display = $('ed-h-l').style.display = $('ed-a-l').style.display = rect ? '' : 'none';
+    $('ed-r-l').style.display = rect ? 'none' : '';
+    $('ed-surface').value = surfaceOf(s);
+    $('ed-move').value = motionOf(s);
+    if (rect) {
+      $('ed-w').value = Math.round(s.w);
+      $('ed-h').value = Math.round(s.h);
+      $('ed-a').value = Math.round((s.a || 0) * 180 / Math.PI);
+    } else $('ed-r').value = Math.round(s.r);
+    const special = s.death || s.bounce != null || s.fric != null;
+    for (const i of swatches.children) {
+      i.classList.toggle('sel', !special && (s.color || COL.plat) === i.dataset.col);
+      i.style.opacity = special ? 0.3 : 1;
+    }
+  }
+
+  function bindProp(id, apply) {
+    const el = $(id);
+    el.addEventListener('focus', remember);
+    el.addEventListener('input', () => { const s = selShape(); if (s) { apply(s, el.value); store.set('mapDraft', map); } });
+    el.addEventListener('change', () => { const s = selShape(); if (s) { apply(s, el.value); changed(); } });
+  }
+  bindProp('ed-w', (s, v) => { s.w = clamp(+v || 10, 10, 1200); });
+  bindProp('ed-h', (s, v) => { s.h = clamp(+v || 10, 10, 800); });
+  bindProp('ed-r', (s, v) => { s.r = clamp(+v || 8, 8, 400); });
+  bindProp('ed-a', (s, v) => { s.a = +v * Math.PI / 180; });
+  bindProp('ed-surface', (s, v) => setSurface(s, v));
+  bindProp('ed-move', (s, v) => setMotion(s, v));
+
+  for (const b of document.querySelectorAll('#ed-tools .tool')) b.addEventListener('click', () => setTool(b.dataset.tool));
+  $('ed-dup').addEventListener('click', duplicate);
+  $('ed-del').addEventListener('click', removeSelected);
+  $('ed-del-spawn').addEventListener('click', removeSelected);
+  $('ed-name').addEventListener('input', e => { map.name = e.target.value; store.set('mapDraft', map); });
+
+  // ------------------------------------------------ saving / loading
+
+  function fillLoadList() {
+    const list = savedMaps();
+    const box = $('ed-load');
+    box.innerHTML = '';
+    const head = document.createElement('option');
+    head.value = '';
+    head.textContent = list.length ? 'Your maps (' + list.length + ')' : 'No saved maps';
+    box.appendChild(head);
+    for (const m of list) {
+      const o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = m.name;
+      box.appendChild(o);
+    }
+    box.value = '';
+  }
+
+  function problems() {
+    if (!map.shapes.some(s => !s.death)) return 'Add at least one platform to stand on';
+    if (map.spawns.length < 2) return 'Place at least 2 spawns';
+    return null;
+  }
+
+  function save() {
+    const bad = problems();
+    if (bad) { toast(bad); return null; }
+    map.name = ($('ed-name').value.trim() || 'Untitled').slice(0, 24);
+    $('ed-name').value = map.name;
+    const list = savedMaps();
+    const entry = { id: map.id, name: map.name, by: profile.name || 'you', shapes: copy(map.shapes), spawns: copy(map.spawns) };
+    const i = list.findIndex(m => m.id === map.id);
+    if (i >= 0) list[i] = entry;
+    else {
+      if (list.length >= MAX_MAPS) { toast('You have ' + MAX_MAPS + ' maps already, delete one first'); return null; }
+      list.push(entry);
+    }
+    store.set('maps', list);
+    store.set('mapDraft', map);
+    fillLoadList();
+    toast('Saved "' + map.name + '"');
+    return installCustomMap(entry);
+  }
+
+  function load(id) {
+    const m = savedMaps().find(m => m.id === id);
+    if (!m) return;
+    remember();
+    map = { id: m.id, name: m.name, shapes: copy(m.shapes), spawns: copy(m.spawns) };
+    $('ed-name').value = map.name;
+    sel = null;
+    changed();
+  }
+
+  function removeMap() {
+    const list = savedMaps();
+    const i = list.findIndex(m => m.id === map.id);
+    if (i < 0) { toast('This map isn\'t saved yet'); return; }
+    if (!confirm('Delete "' + list[i].name + '"?')) return;
+    list.splice(i, 1);
+    store.set('maps', list);
+    const k = MAPS.findIndex(m => m.custom && m.id === map.id);
+    if (k >= 0) MAPS[k].modes = [];   // keep indices stable for this session, just hide it
+    map.id = 'm' + Date.now().toString(36);
+    fillLoadList();
+    changed();
+    toast('Deleted');
+  }
+
+  function test() {
+    const idx = save();
+    if (idx == null) return;
+    loading('Starting a room', 600).then(() => {
+      const me = myInfo();
+      me.host = true;
+      const taken = new Set([profile.name.toLowerCase()]);
+      const players = [me];
+      for (let i = 0; i < 3; i++) players.push(makeBot(taken));
+      room = { name: map.name + ' test', mode: 'classic', map: idx, max: 6, rounds: 3, teams: false, players, taken, randomMap: false, fromEditor: true };
+      enterLobby(false);
+    });
+  }
+
+  $('ed-load').addEventListener('change', e => { if (e.target.value) load(e.target.value); e.target.value = ''; e.target.blur(); });
+  $('ed-new').addEventListener('click', () => { remember(); map = blank(); $('ed-name').value = ''; sel = null; changed(); });
+  $('ed-save').addEventListener('click', save);
+  $('ed-test').addEventListener('click', test);
+  $('ed-remove').addEventListener('click', removeMap);
+  $('ed-back').addEventListener('click', () => { paintMe(); show('menu'); });
+
+  function open() {
+    if (!map) map = store.get('mapDraft', null) || blank();
+    $('ed-name').value = map.name || '';
+    fillLoadList();
+    setTool(tool);
+    show('editor');
+    refreshProps();
+  }
+
+  // ------------------------------------------------ drawing
+
+  function outline(ctx, s, x = s.x, y = s.y) {
+    ctx.beginPath();
+    if (s.t === 'circle') { ctx.arc(x, y, s.r, 0, Math.PI * 2); return; }
+    const c = Math.cos(s.a || 0), sn = Math.sin(s.a || 0), hw = s.w / 2, hh = s.h / 2;
+    [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].forEach(([lx, ly], i) => {
+      const px = x + lx * c - ly * sn, py = y + lx * sn + ly * c;
+      if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py);
+    });
+    ctx.closePath();
+  }
+
+  function draw() {
+    if (!map) return;
+    const ctx = Render.editorBegin(VIEW, map.shapes);
+
+    // rough frame of where the camera usually sits, plus the fall line
+    ctx.setLineDash([8, 8]);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.strokeRect(0, 0, 1000, 650);
+    ctx.strokeStyle = 'rgba(255,93,108,0.35)';
+    ctx.beginPath(); ctx.moveTo(-60, 740); ctx.lineTo(1060, 740); ctx.stroke();
+    ctx.font = '12px ' + getComputedStyle(document.body).fontFamily;
+    ctx.fillStyle = 'rgba(255,93,108,0.6)';
+    ctx.fillText('fall line', 6, 734);
+
+    // where moving shapes end up
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    for (const s of map.shapes) {
+      if (s.move) {
+        outline(ctx, s, s.x + (s.move.dx || 0), s.y + (s.move.dy || 0));
+        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + (s.move.dx || 0), s.y + (s.move.dy || 0)); ctx.stroke();
+      }
+      if (s.spin) { ctx.beginPath(); ctx.arc(s.x, s.y, Math.max(s.w || 0, s.h || 0, (s.r || 0) * 2) / 2, 0, Math.PI * 2); ctx.stroke(); }
+    }
+    ctx.setLineDash([]);
+
+    // spawns
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 13px ' + getComputedStyle(document.body).fontFamily;
+    map.spawns.forEach(([x, y], i) => {
+      ctx.globalAlpha = 0.75;
+      drawSkin(ctx, x, y, PHYS.playerRadius, 0, i === 0 && profile.skin ? profile.skin : { base: '#c9cfe8', alt: '#8a90b3', pattern: 'plain' }, true);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#171b38';
+      ctx.fillText(String(i + 1), x, y + 1);
+    });
+
+    // selection
+    const s = selShape();
+    ctx.strokeStyle = '#5aa9ff';
+    ctx.lineWidth = 3;
+    if (s) {
+      outline(ctx, s);
+      ctx.stroke();
+      const [hx, hy] = handlePos(s);
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(hx, hy, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    } else if (sel && sel.kind === 'spawn') {
+      const [x, y] = map.spawns[sel.i];
+      ctx.beginPath(); ctx.arc(x, y, PHYS.playerRadius + 5, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // shape being drawn
+    if (drag && (drag.type === 'rect' || drag.type === 'circle')) {
+      const x1 = snap(mouse[0]), y1 = snap(mouse[1]);
+      ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (drag.type === 'rect') ctx.rect(Math.min(drag.x0, x1), Math.min(drag.y0, y1), Math.abs(x1 - drag.x0), Math.abs(y1 - drag.y0));
+      else ctx.arc(drag.x0, drag.y0, Math.max(1, Math.hypot(x1 - drag.x0, y1 - drag.y0)), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (tool !== 'select') {
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.beginPath(); ctx.arc(snap(mouse[0]), snap(mouse[1]), 3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+    Render.editorEnd();
+  }
+
+  return { open, draw };
+})();
+
+$('b-editor').addEventListener('click', () => Editor.open());
+</script>
+</body>
+</html>
