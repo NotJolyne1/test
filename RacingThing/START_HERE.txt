@@ -1,0 +1,14 @@
+How to open Racing Thing (Unity 2022.3.62f3)
+
+1. Right-click RacingThing.zip > Extract All > Extract.
+   You get a "RacingThing" folder with Assets, Packages and ProjectSettings inside.
+2. Unity Hub > Projects > Add > "Add project from disk".
+3. Pick that RacingThing folder and click Add Project.
+4. Click it in the list to open. The first time takes a few minutes.
+5. Press Play.
+
+Multiplayer: start your RelayNetworking server first. Then in the game click
+Multiplayer, put in the server IP (127.0.0.1 if it's on the same PC), and Host
+or Join with a room code. More in README.md.
+
+To make the exe: Racing Thing menu > Build Windows. It ends up in Builds/Windows.
