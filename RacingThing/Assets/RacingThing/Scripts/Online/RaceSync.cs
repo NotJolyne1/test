@@ -73,6 +73,7 @@ namespace RacingThing
         int loadingFor = -1;     // race id whose track we've started building
         int loadedFor = -1;      // race id whose track is ready here
         int goSentFor = -1, endSentFor = -1, resultsSentFor = -1;
+        float loadedResend;
         string lastPhase;
         float phaseTime;
 
@@ -84,7 +85,8 @@ namespace RacingThing
 
         // ------------------------------------------------------------ what the room says
 
-        public string Phase { get { return online.RoomProperty(PhaseKey) as string ?? Lobby; } }
+        // null until the room's properties have arrived (just after joining, or after a reconnect)
+        public string Phase { get { return online.RoomProperty(PhaseKey) as string; } }
         public int RaceId { get { return Int(RaceKey, 0); } }
         public double GoTime { get { return Double(GoKey); } }
         public double EndTime { get { return Double(EndKey); } }
@@ -107,7 +109,7 @@ namespace RacingThing
                     foreach (string part in raw.Split(','))
                     {
                         int id;
-                        if (int.TryParse(part, out id)) racers.Add(id);
+                        if (int.TryParse(part, NumberStyles.Integer, CultureInfo.InvariantCulture, out id)) racers.Add(id);
                     }
                 }
                 return racers;
@@ -128,9 +130,9 @@ namespace RacingThing
                         string[] f = entry.Split('|');
                         if (f.Length < 4) continue;
                         var r = new Result();
-                        int.TryParse(f[0], out r.PlayerId);
-                        int.TryParse(f[1], out r.Ms);
-                        int.TryParse(f[2], out r.Car);
+                        int.TryParse(f[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out r.PlayerId);
+                        int.TryParse(f[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out r.Ms);
+                        int.TryParse(f[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out r.Car);
                         r.Name = f[3];
                         results.Add(r);
                     }
@@ -193,7 +195,7 @@ namespace RacingThing
             foreach (var p in online.Players)
             {
                 if (ids.Length > 0) ids.Append(',');
-                ids.Append(p.PlayerId);
+                ids.Append(p.PlayerId.ToString(CultureInfo.InvariantCulture));
             }
             int next = RaceId + 1;
             online.SetRoomProperties(c =>
@@ -221,15 +223,32 @@ namespace RacingThing
             if (me == null || finishes.ContainsKey(me.PlayerId)) return;
             int ms = Mathf.RoundToInt(seconds * 1000f);
             Record(me.PlayerId, ms);
+            SendFinish(ms);
+        }
+
+        void SendFinish(int ms)
+        {
             string payload = RaceId.ToString(CultureInfo.InvariantCulture) + ":" + ms.ToString(CultureInfo.InvariantCulture);
             RelayNetwork.SendEvent(Online.FinishEvent, Encoding.UTF8.GetBytes(payload), RelayNetworking.Common.Protocol.EventTarget.Others);
+        }
+
+        // Anything sent while the connection was down is gone, so say it again. Receivers ignore repeats.
+        public void Reconnected()
+        {
+            goSentFor = endSentFor = resultsSentFor = -1;
+            var me = online.Me;
+            int ms;
+            if (me != null && finishes.TryGetValue(me.PlayerId, out ms)) SendFinish(ms);
+            loadedResend = 0f;
         }
 
         public void FinishReceived(int playerId, string payload)
         {
             string[] parts = payload.Split(':');
             int race, ms;
-            if (parts.Length != 2 || !int.TryParse(parts[0], out race) || !int.TryParse(parts[1], out ms)) return;
+            if (parts.Length != 2
+                || !int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out race)
+                || !int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out ms)) return;
             if (race != RaceId || !IsRacer(playerId) || finishes.ContainsKey(playerId)) return;
             Record(playerId, ms);
         }
@@ -344,16 +363,25 @@ namespace RacingThing
                 phaseTime = 0f;
             }
             phaseTime += dt;
+            if (phase == null) return;
 
-            Follow(phase);
+            Follow(phase, dt);
             if (online.IsHost) Lead(phase);
         }
 
         // what every client does
-        void Follow(string phase)
+        void Follow(string phase, float dt)
         {
             int race = RaceId;
             bool active = phase == Loading || phase == Racing;
+
+            // keep saying we've loaded until the room has it (it can get lost in a reconnect)
+            if (active && loadedFor == race && online.Me != null && (loadedResend -= dt) <= 0f)
+            {
+                object v = online.Me.Properties[Online.LoadedKey];
+                if (!(v is int) || (int)v != race) online.SetMyProperty(Online.LoadedKey, race);
+                loadedResend = 2f;
+            }
 
             if (active && ImRacing && loadingFor != race)
             {
@@ -394,22 +422,21 @@ namespace RacingThing
             {
                 if (EveryoneLoaded(race) || phaseTime > LoadTimeout)
                 {
-                    goSentFor = race;
                     double go = Now + Countdown;
-                    online.SetRoomProperties(c =>
+                    bool sent = online.SetRoomProperties(c =>
                     {
                         c[PhaseKey] = Racing;
                         c[GoKey] = go;
                     });
+                    if (sent) goSentFor = race;
                 }
             }
             else if (phase == Racing && resultsSentFor != race)
             {
                 if (finishes.Count > 0 && EndTime <= 0.0 && endSentFor != race)
                 {
-                    endSentFor = race;
                     double end = Now + FinishWindow;
-                    online.SetRoomProperties(c => c[EndKey] = end);
+                    if (online.SetRoomProperties(c => c[EndKey] = end)) endSentFor = race;
                 }
 
                 int left = 0;
@@ -419,13 +446,13 @@ namespace RacingThing
                 bool timeUp = EndTime > 0.0 && Now > EndTime;
                 if (left == 0 || timeUp || phaseTime > MaxRaceTime)
                 {
-                    resultsSentFor = race;
                     string table = BuildResults();
-                    online.SetRoomProperties(c =>
+                    bool sent = online.SetRoomProperties(c =>
                     {
                         c[PhaseKey] = Done;
                         c[ResultsKey] = table;
                     });
+                    if (sent) resultsSentFor = race;
                 }
             }
             else if (phase == Done && phaseTime > ResultsLinger)
@@ -461,7 +488,9 @@ namespace RacingThing
             {
                 if (sb.Length > 0) sb.Append(';');
                 string name = r.Name.Replace("|", "").Replace(";", "");
-                sb.Append(r.PlayerId).Append('|').Append(r.Ms).Append('|').Append(r.Car).Append('|').Append(name);
+                sb.Append(r.PlayerId.ToString(CultureInfo.InvariantCulture)).Append('|')
+                  .Append(r.Ms.ToString(CultureInfo.InvariantCulture)).Append('|')
+                  .Append(r.Car.ToString(CultureInfo.InvariantCulture)).Append('|').Append(name);
             }
             return sb.ToString();
         }

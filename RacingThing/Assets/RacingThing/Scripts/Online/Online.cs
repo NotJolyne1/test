@@ -43,10 +43,21 @@ namespace RacingThing
         public RaceSync Race { get; private set; }
 
         public bool InRoom { get { return State == Status.InRoom && RelayNetwork.CurrentRoom != null; } }
-        public bool IsHost { get { return InRoom && RelayNetwork.IsLeader; } }
+        // false while a "Make host" is on its way, so a second click can't send a leader-only
+        // command after the server has already taken the role away (it disconnects you for that)
+        public bool IsHost { get { return InRoom && RelayNetwork.IsLeader && handingOver <= 0f; } }
         public RelayPlayer Me { get { return RelayNetwork.LocalPlayer; } }
         public IReadOnlyList<RelayPlayer> Players { get { return RelayNetwork.ActivePlayers; } }
-        public RelayPlayer Host { get { return RelayNetwork.Leader; } }
+        // RelayNetwork.Leader is only filled in after a leader change, so look at the players instead
+        public RelayPlayer Host
+        {
+            get
+            {
+                var list = RelayNetwork.ActivePlayers;
+                for (int i = 0; i < list.Count; i++) if (list[i].IsLeader) return list[i];
+                return null;
+            }
+        }
 
         // the lobby redraws on this
         public event Action Changed;
@@ -64,7 +75,7 @@ namespace RacingThing
         bool leaving;           // we started the disconnect ourselves
         bool dropAfterPoll;     // got told to leave while the network was mid-poll
         string dropReason;
-        float pingTimer, chatCooldown;
+        float pingTimer, chatCooldown, handingOver;
 
         public void Init(Game game)
         {
@@ -120,7 +131,7 @@ namespace RacingThing
             var sb = new StringBuilder();
             foreach (char c in (name ?? "").Trim())
             {
-                if (char.IsControl(c) || c == ':' || c == ';' || c == '|') continue;
+                if (char.IsControl(c) || c == ':' || c == ';' || c == '|' || c == '<' || c == '>') continue;
                 sb.Append(c);
                 if (sb.Length >= 16) break;
             }
@@ -344,6 +355,7 @@ namespace RacingThing
             Reconnecting = false;
             Say("Reconnected.", Ui.TextDim);
             ShareCar();
+            Race.Reconnected();
             Changed?.Invoke();
         }
 
@@ -358,7 +370,7 @@ namespace RacingThing
         {
             if (!InRoom) return;
             Say(NameOf(p) + " joined.", Ui.Good);
-            Sfx.Play(Sound.Checkpoint, 0.5f);
+            if (game.View != Game.OnlineView.Race) Sfx.Play(Sound.Checkpoint, 0.5f);
             // New players only get names when they join, not everyone's properties,
             // so say our car colour again for their benefit.
             ShareCar();
@@ -375,6 +387,7 @@ namespace RacingThing
 
         void OnLeaderChanged(RelayPlayer p)
         {
+            handingOver = 0f;
             if (!InRoom) return;
             Say(p == Me ? "You're the host now." : NameOf(p) + " is the host now.", Ui.Accent);
             Changed?.Invoke();
@@ -413,12 +426,13 @@ namespace RacingThing
             RelayNetwork.UpdateProperties(changes);
         }
 
-        public void SetRoomProperties(Action<PropertyChanges> build)
+        // false if it couldn't be sent (not host, or the connection is mid-reconnect)
+        public bool SetRoomProperties(Action<PropertyChanges> build)
         {
-            if (!IsHost) return;
+            if (!IsHost || !RelayNetwork.Connected) return false;
             var changes = new PropertyChanges();
             build(changes);
-            RelayNetwork.UpdateRoomProperties(changes);
+            return RelayNetwork.UpdateRoomProperties(changes);
         }
 
         public object RoomProperty(string key)
@@ -436,7 +450,11 @@ namespace RacingThing
         public void MakeHost(RelayPlayer p)
         {
             if (!IsHost || p == null || p == Me) return;
-            RelayNetwork.TransferLeader(p);
+            if (RelayNetwork.TransferLeader(p))
+            {
+                handingOver = 4f;
+                Changed?.Invoke();
+            }
         }
 
         // ------------------------------------------------------------ chat and events
@@ -484,6 +502,7 @@ namespace RacingThing
         {
             float dt = Time.unscaledDeltaTime;
             if (chatCooldown > 0f) chatCooldown -= dt;
+            if (handingOver > 0f && (handingOver -= dt) <= 0f) Changed?.Invoke();
 
             if (dropAfterPoll)
             {

@@ -317,7 +317,8 @@ namespace RacingThing
             carName.text = Settings.CarColorNames[Settings.CarColor];
 
             // what's going on
-            bool racing = sync.Phase != RaceSync.Lobby;
+            string phase = sync.Phase;
+            bool racing = phase != null && phase != RaceSync.Lobby;
             raceNote.text = racing ? "There's a race going on. You'll be in the next one." : "";
             startButton.gameObject.SetActive(host && !racing);
             startButton.interactable = sync.CanStart;

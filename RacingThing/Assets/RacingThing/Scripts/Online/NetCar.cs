@@ -44,6 +44,8 @@ namespace RacingThing
         Quaternion shownRot = Quaternion.identity;
         float wheelSpin;
         int pathHint = -1;
+        TrackPath hintPath;
+        int snapsRace = -1;     // which race the buffered packets belong to
         double progress;
         int progressFrame = -1;
         bool started;
@@ -83,7 +85,8 @@ namespace RacingThing
         [RelayRpc]
         void RpcHonk()
         {
-            PlayHorn(view != null && view.activeSelf ? hornSource : null);
+            // only heard when you can see the car; in the lobby there's nothing to honk at you
+            if (view != null && view.activeSelf) PlayHorn(hornSource);
         }
 
         static void PlayHorn(AudioSource at)
@@ -101,7 +104,11 @@ namespace RacingThing
             if (!started || !Mine) return;
             var game = Game.Instance;
             var car = game != null && game.View == Game.OnlineView.Race ? game.LocalCar : null;
-            if (car == null) return;
+            if (car == null)
+            {
+                checkpoints = 0;   // so nobody ranks us on last race's count while we load
+                return;
+            }
             transform.SetPositionAndRotation(car.transform.position, car.transform.rotation);
             checkpoints = game.LocalCheckpoints;
         }
@@ -111,6 +118,7 @@ namespace RacingThing
         void OnTransform(TransformData data)
         {
             if (NetworkObject == null || data.NetworkId != NetworkObject.NetworkId) return;
+            ForgetOldRace();
             var s = new Snapshot
             {
                 Time = Time.time,
@@ -129,8 +137,20 @@ namespace RacingThing
             while (snaps.Count > 2 && snaps[1].Time < Time.time - 1f) snaps.RemoveAt(0);
         }
 
+        // positions from the last race mean nothing on the next one
+        void ForgetOldRace()
+        {
+            var online = Online.Instance;
+            int race = online != null ? online.Race.RaceId : -1;
+            if (race == snapsRace) return;
+            snapsRace = race;
+            snaps.Clear();
+            pathHint = -1;
+        }
+
         bool ShouldShow()
         {
+            ForgetOldRace();
             var game = Game.Instance;
             var online = Online.Instance;
             if (game == null || online == null || !online.InRoom) return false;
@@ -252,6 +272,11 @@ namespace RacingThing
                 return progress;
             }
             var path = world.Path;
+            if (path != hintPath || pathHint >= path.Count)
+            {
+                hintPath = path;
+                pathHint = -1;
+            }
             Vector3 at = view != null && view.activeSelf ? shownPos : snaps[snaps.Count - 1].Pos;
             int i = path.Nearest(at, pathHint, 40);
             if ((path.Pos[i] - at).sqrMagnitude > 50f * 50f) i = path.Nearest(at, -1, 0);
