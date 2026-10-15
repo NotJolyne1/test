@@ -3482,7 +3482,7 @@ const Net = (() => {
 
   function defaultServer() {
     if (location.protocol === 'http:' || location.protocol === 'https:') return location.host;
-    return 'localhost:8080';
+    return '10.18.98.171:8080';
   }
 
   function url(address) {
@@ -4152,7 +4152,7 @@ const Menus = (() => {
       <button data-a="join" style="position:absolute;left:12em;top:21.7em;width:6.2em;font-size:3.2em">Join</button>
       <div class="status" id="status" style="left:3.1em;top:34em;width:30em"></div>
       <button data-a="cancel" class="small hidden" style="position:absolute;left:3.7em;top:46em">Cancel</button>
-      <div class="dim" style="position:absolute;left:4.1em;bottom:4em;width:29em;font-size:1.8em;opacity:0.7">The server is server.js (run it with Node.js). If you opened the game from it, the address is already filled in. Friends on other computers use that computer's address, like 192.168.1.20:8080.</div>
+      <div class="dim" style="position:absolute;left:4.1em;bottom:4em;width:29em;font-size:1.8em;opacity:0.7">The server is your relay server (port 8080 for browsers). If you opened the game from it, the address is already filled in.</div>
     </div>`);
     el.querySelector('#f-name').value = name;
     el.querySelector('#f-server').value = store.get('server', '') || Net.defaultServer();

@@ -1,0 +1,22 @@
+Racing Thing in the browser, on your relay server
+=================================================
+
+Browsers can't send UDP, so the relay server gets a second door just for browsers:
+a WebSocket on port 8080. It runs inside the same server process. The Unity/UDP side on
+7777 is not touched.
+
+1. Copy the "Web" folder (with WebRelay.cs in it) into your RelayNetworking.Server folder,
+   next to Program.cs.
+2. Replace RelayNetworking.Server\Program.cs with the one here. The only change is one line
+   after server.Start():   RelayNetworking.Server.Web.WebRelay.Start(8080);
+3. Copy index.html into the RelayNetworking.Server folder too (the folder you run
+   "dotnet run" in).
+4. Run the server like always:  dotnet run
+   You should see:
+     [Web] Browser players: open http://<this computer's address>:8080
+5. Everyone opens  http://10.18.98.171:8080  in a browser -> Multiplayer -> Host or Join.
+
+If someone opens index.html straight from a file instead, the Server box is already
+filled in with 10.18.98.171:8080.
+
+If Windows asks whether dotnet may use the network, click Allow.
