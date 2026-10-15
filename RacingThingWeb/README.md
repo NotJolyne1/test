@@ -4,7 +4,7 @@ The whole game is one file, `index.html`: all 7 tracks, ghosts, medals, settings
 online races.
 
 - **On your own:** double-click `index.html`.
-- **Online, on your relay server:** see `ForRelayServer/HOW_TO_INSTALL.txt`. It adds a
+- **Online, on your relay server:** put `ForRelayServer/WebRelay.cs` in your RelayNetworking.Server folder (see `ForRelayServer/HOW_TO_INSTALL.txt`). It adds a
   browser port (8080) to your RelayNetworking server. Then everyone opens
   `http://10.18.98.171:8080`, clicks Multiplayer, and hosts or joins with a room code.
 - **Online without the relay server:** `node server.js` does the same job on any computer

@@ -1,4 +1,5 @@
-// Browser players for the relay server.
+// Browser players for the relay server. Just drop this file into RelayNetworking.Server
+// (anywhere in that folder) and run the server as normal. Nothing else to change.
 //
 // Browsers can't use UDP, so the web version of Racing Thing connects here over a WebSocket
 // instead. This runs inside the relay server process on its own port (8080 by default) and
@@ -32,8 +33,16 @@ namespace RelayNetworking.Server.Web
         static int nextId = 1;
         static Timer? pinger;
 
+        // starts by itself when the server starts, so Program.cs doesn't need changing
+        [System.Runtime.CompilerServices.ModuleInitializer]
+        internal static void AutoStart() => Start(8080);
+
+        static bool started;
+
         public static void Start(int port = 8080)
         {
+            if (started) return;
+            started = true;
             TcpListener listener;
             try
             {

@@ -6,9 +6,6 @@ RelayServer server = new(options);
 
 server.Start();
 
-// browser players (the web version of Racing Thing) connect over WebSockets on port 8080
-RelayNetworking.Server.Web.WebRelay.Start(8080);
-
 Console.WriteLine("[Server] Running");
 
 while (true)
