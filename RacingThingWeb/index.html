@@ -437,11 +437,11 @@ const TRACK_FILES = [
 ],
 [
 "08_harbour_sprint",
-"name: Harbour Sprint\ntheme: coast\ndifficulty: 1\n\nstart\nforward 4\nboost\nforward 3\nright 3\nforward 2\nleft 3\ncp\nforward 3\nup 1\nforward 2\ndown 1\nright 3 bank\nforward 3\ncp\nboost\nforward 4\nleft 3\nforward 2\nfinish\n"
+"name: Harbour Sprint\ntheme: coast\ndifficulty: 1\n\nstart\nforward 4\nboost\nforward 2\nright 2\nforward 2\nright 2\ncp\nforward 3\nleft 2\nforward 2\nleft 2\nup 1\nforward 2\ndown 1\nright 2\ncp\nforward 3\nright 2\nforward 2\nfinish\n"
 ],
 [
 "09_switchback_ridge",
-"name: Switchback Ridge\ntheme: forest\ndifficulty: 3\n\nstart\nforward 2\nup 2\nleft 2 bank\nforward 1\nright 2 bank up=1\nforward 2\ncp\nleft 3 bank\ndown 2\nforward 2\nboost\nforward 2\nramp\ngap 2 drop=1\nforward 4\ncp\nright 2\nleft 2\nright 3 bank\nforward 2\nfinish\n"
+"name: Switchback Ridge\ntheme: forest\ndifficulty: 3\n\nstart\nforward 2\nup 2\nleft 2\nleft 2\nforward 2\ncp\nright 2\nright 2\ndown 2\nforward 2\nboost\nforward 2\nramp\ngap 2 drop=1\nforward 4\ncp\nleft 2\nforward 2\nright 2\nforward 1\nfinish\n"
 ],
 [
 "10_double_loop",
@@ -449,15 +449,15 @@ const TRACK_FILES = [
 ],
 [
 "11_dust_devil",
-"name: Dust Devil\ntheme: canyon\ndifficulty: 2\n\nstart\nforward 3\nleft 2\nright 2\nleft 2\nforward 2\ncp\nup 2\nforward 3\ndown 2\nright 3 bank\nforward 4\ncp\nboost\nforward 2\nramp\ngap 3 drop=1\nforward 4\nleft 3\nforward 2\nfinish\n"
+"name: Dust Devil\ntheme: canyon\ndifficulty: 2\n\nstart\nforward 3\nleft 2\nforward 1\nright 2\nforward 1\nright 2\ncp\nup 2\nforward 2\ndown 2\nleft 3 bank\nleft 2\nforward 3\ncp\nboost\nforward 2\nramp\ngap 3 drop=1\nforward 4\nright 2\nforward 2\nfinish\n"
 ],
 [
 "12_golden_hour",
-"name: Golden Hour\ntheme: sunset\ndifficulty: 2\n\nstart\nforward 5\nboost\nforward 3\nright 4 bank\nforward 3\ncp\nleft 4 bank\nforward 3\nup 2\nforward 2\ncp\ndown 2\nright 3\nforward 2\nleft 3\nforward 2\nfinish\n"
+"name: Golden Hour\ntheme: sunset\ndifficulty: 2\n\nstart\nforward 5\nboost\nforward 2\nright 3 bank\nright 2\nforward 2\ncp\nleft 3 bank\nleft 2\nforward 2\nup 2\nforward 2\ncp\ndown 2\nright 2\nforward 2\nleft 2\nforward 2\nfinish\n"
 ],
 [
 "13_island_hopper",
-"name: Island Hopper\ntheme: tropic\ndifficulty: 4\n\nstart\nforward 2\nboost\nforward 2\nramp\ngap 2 drop=1\nforward 3\nright 3 bank\ncp\nforward 2\nloop\nforward 2\nleft 3\nboost\nforward 2\nramp\ngap 3 drop=1\nforward 4\ncp\nright 2\nleft 2\nboost\nforward 3\nloop left\nforward 2\ncp\nright 3\nforward 2\nfinish\n"
+"name: Island Hopper\ntheme: tropic\ndifficulty: 4\n\nstart\nforward 2\nboost\nforward 2\nramp\ngap 2 drop=1\nforward 3\nright 3 bank\ncp\nforward 2\nloop\nforward 2\nleft 3\nboost\nforward 2\nramp\ngap 3 drop=1\nforward 4\ncp\nright 2\nforward 1\nleft 2\nforward 1\nleft 2\nboost\nforward 3\nloop left\nforward 2\ncp\nright 2\nforward 1\nright 2\nforward 2\nfinish\n"
 ]
 ];
 
@@ -522,6 +522,8 @@ const Tile = 13, Level = 2.5, HalfWidth = 6, WallThickness = 0.5, WallHeight = 0
 const RampRise = 0.3;
 // barriers stop the car this high up, though they're drawn lower
 const WallCollider = 5;
+// how fast grinding along a barrier bleeds speed (per second)
+const WallDrag = 3;
 // jumps (the kicker ramp and the gap) keep their original size when the tracks got wider,
 // so they fly exactly like before
 const GapTile = 10;
@@ -2735,7 +2737,7 @@ class Car {
     if (!contacts.length) return;
 
     const S = CarSpec, ii = this.iinv, m = S.mass, up = this.up;
-    let impact = 0, scraping = false, wallN = null;
+    let impact = 0, scraping = false, wallN = null, iterImpact = 0;
     for (let iter = 0; iter < 4; iter++) {
       for (const c of contacts) {
         let r = v3().subVectors(c.p, com);
@@ -2745,7 +2747,7 @@ class Car {
         const vp = v3().crossVectors(this.angVel, r).add(this.vel);
         const vn = vp.dot(c.n);
         if (vn >= 0) continue;
-        if (iter === 0) { impact = Math.max(impact, -vn); if (c.wall) { scraping = true; wallN = c.n; } }
+        if (iter === 0) { impact = Math.max(impact, -vn); if (c.wall) { scraping = true; wallN = c.n; iterImpact = Math.max(iterImpact, -vn); } }
         const rn = v3().crossVectors(r, c.n);
         const k = 1 / m + c.n.dot(rn.applyMatrix3(ii).cross(r));
         // walls give a little bounce back so the car glances off instead of sticking
@@ -2764,13 +2766,25 @@ class Car {
         }
       }
     }
-    // nose into a barrier: swing the car round to run along it, so it can't get stuck
     if (wallN) {
-      // and keep it on its wheels while it's grinding along one
+      // keep it on its wheels while it's grinding along a barrier
       const yawPart = this.angVel.dot(up);
       this.angVel.addScaledVector(up, -yawPart).multiplyScalar(0.9).addScaledVector(up, yawPart);
+      // barriers cost you: the harder the hit the more speed you lose, and grinding along one
+      // bleeds speed fast, so bouncing round corners is always slower than steering
+      // except in loops, where the road leans you across to the way out and the barrier
+      // is part of the ride
+      const looping = cf && this.ground.path.inLoop(cf.i);
+      if (iterImpact > 0 && !looping) {
+        const keep = Math.max(0.3, 1 - iterImpact * 0.032);
+        const vUp = this.vel.dot(up);
+        this.vel.addScaledVector(up, -vUp).multiplyScalar(keep).addScaledVector(up, vUp);
+      }
+      const vUp = this.vel.dot(up);
+      if (!looping) this.vel.addScaledVector(up, -vUp).multiplyScalar(Math.max(0, 1 - WallDrag * dt)).addScaledVector(up, vUp);
+      // only when nearly stopped with the nose in a barrier: swing round so it can't get stuck
       const fwd = this.forward, into = -fwd.dot(wallN);
-      if (into > 0.05) {
+      if (into > 0.05 && this.speed < 8) {
         const along = fwd.clone().addScaledVector(wallN, into).normalize();
         const yaw = v3().crossVectors(fwd, along).dot(up);
         const rate = clamp(yaw * 9, -4, 4);
