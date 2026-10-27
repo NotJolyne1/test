@@ -191,6 +191,50 @@ input::placeholder { color: rgba(255, 255, 255, 0.35); font-style: italic; }
 #chat-log div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .code { position: absolute; left: 0.8em; top: 1.75em; font-size: 9.6em; font-weight: 800; color: var(--accent); letter-spacing: 0.04em; text-shadow: 0.05em 0.05em 0 rgba(0, 0, 0, 0.35); }
 #toast { position: fixed; left: 50%; top: 2em; transform: translateX(-50%); background: var(--panel-solid); padding: 0.6em 1.4em; border-radius: 0.8em; font-size: 18px; z-index: 20; }
+
+/* ---- look: hard edges, slanted buttons, heavy italic type ---- */
+:root { --font: "Bahnschrift", "DIN Alternate", "Arial Narrow", "Roboto Condensed", "Helvetica Neue", Arial, sans-serif; --panel: rgba(12, 14, 22, 0.92); }
+#ui, #loading, #toast, .tag { font-stretch: condensed; }
+button {
+  border-radius: 0; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;
+  background: rgba(20, 23, 34, 0.9); border-left: 0.18em solid rgba(255, 255, 255, 0.25);
+  clip-path: polygon(0.45em 0, 100% 0, calc(100% - 0.45em) 100%, 0 100%);
+  transition: background 0.08s, color 0.08s, border-color 0.08s;
+}
+button:hover { background: #2b3044; transform: none; border-left-color: var(--accent); }
+button:active { background: #353b52; }
+button.primary { background: var(--accent); color: #111; border-left-color: #111; }
+button.primary:hover { background: #ffd04d; }
+button.small { padding: 0.35em 1em; }
+.menu-buttons { gap: 0.9em; }
+.menu-buttons button { text-align: left; padding: 0.42em 1em; font-style: italic; font-weight: 800; }
+input { border-radius: 0; border: 0; border-bottom: 0.12em solid rgba(255, 255, 255, 0.3); background: rgba(0, 0, 0, 0.45); }
+input:focus { border-bottom-color: var(--accent); background: rgba(0, 0, 0, 0.6); }
+input::placeholder { font-style: normal; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.28); }
+.panel, .card, .tcard, .hud-panel, .row, .prow, .rrow, .brow, .lobby-box, .details, #split, #toast { border-radius: 0; }
+.panel, .card { background: var(--panel); border-left: 0.6em solid var(--accent); }
+.shade-left { background: linear-gradient(90deg, rgba(6, 8, 14, 0.82), rgba(6, 8, 14, 0.55) 70%, rgba(6, 8, 14, 0)); }
+.heading, .card h2, .details .big, #finish .t, #results h2, .code, #countdown, #place, #mine, .tcard .num, #logo { font-style: italic; text-transform: uppercase; letter-spacing: -0.01em; }
+.heading { font-weight: 900; }
+#logo { font-weight: 900; line-height: 0.9; text-shadow: 0.06em 0.06em 0 rgba(0, 0, 0, 0.55); }
+#logo b { display: block; color: var(--accent); }
+#byline { position: absolute; left: 2.75em; top: 12.9em; font-size: 2.6em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.75); }
+.corner-note { color: rgba(255, 255, 255, 0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 2em; }
+.tcard { background: rgba(14, 16, 26, 0.9); }
+.tcard:hover { transform: none; background: rgba(34, 38, 56, 0.95); }
+.tcard.picked { box-shadow: inset 0 0 0 0.25em var(--accent); }
+.tcard .band, .details .band { border-radius: 0; left: 0; right: auto; top: 0; bottom: 0; width: 0.5em; height: auto; }
+.chip { border-radius: 0; text-transform: uppercase; letter-spacing: 0.06em; }
+.field-label, .details .label, .row .l, .lobby-box h3 { text-transform: uppercase; letter-spacing: 0.08em; }
+.prow .hosttag { border-radius: 0; }
+.dim-bg { background: rgba(4, 5, 10, 0.6); }
+#loading { background: #0a0c12; }
+#loading .name { font-style: italic; text-transform: uppercase; font-weight: 900; }
+#loading .info { text-transform: uppercase; letter-spacing: 0.15em; }
+#loading .bar { border-radius: 0; height: 0.5em; }
+.hud-panel { background: rgba(8, 10, 16, 0.72); border-left: 0.4em solid var(--accent); }
+#clock span, #speedo .n { font-style: italic; }
+#speedo .bar { height: 0.45em; }
 </style>
 </head>
 <body>
@@ -449,8 +493,15 @@ function parseTrack(id, text) {
 // One sample per metre with a full frame (forward/right/up) at each. The road, scenery,
 // checkpoints, boost pads, respawns and the car's collisions all come from this.
 
-const Tile = 10, Level = 2.5, HalfWidth = 4.5, WallThickness = 0.5, WallHeight = 0.7, SlabDepth = 1.0, LoopRadius = 12;
+const Tile = 13, Level = 2.5, HalfWidth = 6, WallThickness = 0.5, WallHeight = 0.7, SlabDepth = 1.0, LoopRadius = 12;
 const RampRise = 0.3;
+// barriers stop the car this high up, though they're drawn lower
+const WallCollider = 5;
+// jumps (the kicker ramp and the gap) keep their original size when the tracks got wider,
+// so they fly exactly like before
+const GapTile = 10;
+// how far over a loop's way out runs from its way in: a road width plus some room
+const LoopShift = 2 * (HalfWidth + WallThickness) + 2;
 
 const dirOf = deg => v3(Math.sin(deg * DEG), 0, Math.cos(deg * DEG));
 
@@ -503,7 +554,7 @@ class TrackPath {
     }
   }
 
-  // a full vertical loop: two tiles forward and one tile over, so the way out runs beside the way in
+  // a full vertical loop: two tiles forward and a road width over, so the way out runs beside the way in
   loop(side) {
     this.loops++;
     const f0 = dirOf(this.y), r0 = v3().crossVectors(v3(0, 1, 0), f0);
@@ -514,7 +565,7 @@ class TrackPath {
       const th = 2 * Math.PI * i / n;
       const along = LoopRadius * Math.sin(th) + advance * th / (2 * Math.PI);
       const height = LoopRadius * (1 - Math.cos(th));
-      const lateral = side * Tile * smooth(th / (2 * Math.PI));
+      const lateral = side * LoopShift * smooth(th / (2 * Math.PI));
       this.p = start.clone().addScaledVector(f0, along).addScaledVector(r0, lateral);
       this.p.y += height;
       const up = v3(0, Math.cos(th), 0).addScaledVector(f0, -Math.sin(th));
@@ -531,8 +582,8 @@ class TrackPath {
       const here = path.count - 1;
       switch (pc.type) {
         case Piece.Start: start = here; path.straight(Tile); break;
-        case Piece.Finish: finish = here + Tile / 2; path.straight(Tile * 3); break;
-        case Piece.Checkpoint: path.checkpoints.push(here + Tile / 2); path.straight(Tile); break;
+        case Piece.Finish: finish = here + Math.round(Tile / 2); path.straight(Tile * 3); break;
+        case Piece.Checkpoint: path.checkpoints.push(here + Math.round(Tile / 2)); path.straight(Tile); break;
         case Piece.Forward: path.straight(pc.size * Tile); break;
         case Piece.Boost:
           path.straight(pc.size * Tile);
@@ -540,8 +591,8 @@ class TrackPath {
           break;
         case Piece.Slope: path.straight(pc.size * Tile, pc.dir * pc.size * Level * (pc.steep ? 2 : 1)); break;
         case Piece.Turn: path.turn(pc.size, pc.dir, pc.levels * Level, pc.bank); break;
-        case Piece.Ramp: path.straight(Tile, RampRise, 1); break;
-        case Piece.Gap: path.straight(pc.size * Tile, pc.levels * Level, 2, true); break;
+        case Piece.Ramp: path.straight(GapTile, RampRise, 1); break;
+        case Piece.Gap: path.straight(pc.size * GapTile, pc.levels * Level, 2, true); break;
         case Piece.Loop: path.loop(pc.dir); break;
       }
     }
@@ -693,18 +744,18 @@ const Tracks = TRACK_FILES.map(([id, text], index) => {
 });
 
 const Records = {
-  best(id) { return store.get('best_' + id, -1); },
-  splits(id) { return store.get('splits_' + id, null); },
+  best(id) { return store.get('best2_' + id, -1); },
+  splits(id) { return store.get('splits2_' + id, null); },
   submit(id, time, splits, ghost) {
     const best = this.best(id);
     if (best > 0 && time >= best) return false;
-    store.set('best_' + id, time);
-    store.set('splits_' + id, splits);
-    if (ghost) store.set('ghost_' + id, ghost.save());
+    store.set('best2_' + id, time);
+    store.set('splits2_' + id, splits);
+    if (ghost) store.set('ghost2_' + id, ghost.save());
     return true;
   },
-  ghost(id) { const g = store.get('ghost_' + id, null); return g ? Ghost.load(g) : null; },
-  resetAll() { for (const t of Tracks) { store.del('best_' + t.id); store.del('splits_' + t.id); store.del('ghost_' + t.id); } },
+  ghost(id) { const g = store.get('ghost2_' + id, null); return g ? Ghost.load(g) : null; },
+  resetAll() { for (const t of Tracks) { store.del('best2_' + t.id); store.del('splits2_' + t.id); store.del('ghost2_' + t.id); } },
   medalFor(info, time) {
     if (time <= 0) return Medal.None;
     if (time <= info.authorTime) return Medal.Author;
@@ -2494,6 +2545,7 @@ class Car {
     this.grounded = wheelsDown > 0;
     if (this.grounded) this.drive(normal.normalize(), wheelsDown / 4, throttle, brake, steer, drift, dt);
     else this.fly(steer, dt);
+    this.keepUpright(wheelsDown);
 
     this.boost = moveTowards(this.boost, this.onBoost ? 1 : 0, dt * (this.onBoost ? 6 : 1.5));
     this.wasGrounded = this.grounded;
@@ -2566,6 +2618,20 @@ class Car {
     this.accA.addScaledVector(align, contact);
   }
 
+  // close to the road but not on all four wheels (tipping on a bump, leaning on a barrier,
+  // landing crooked): turn the car back to sit flat on the road, so it doesn't end up on
+  // its side or roof. Uses the road's own up, so banks and loops work too.
+  keepUpright(wheelsDown) {
+    if (wheelsDown >= 4) return;
+    const f = this.ground.road(this.comWorld());
+    if (!f || f.y < -0.5 || f.y > 3 || Math.abs(f.x) > HalfWidth + 1) return;
+    const w = (1 - wheelsDown / 4) * clamp01((3 - f.y) / 1.5);
+    const up = this.up, av = this.angVel;
+    const tilt = v3().crossVectors(up, f.U);
+    const nonYaw = av.clone().addScaledVector(up, -av.dot(up));
+    this.accA.addScaledVector(tilt, 45 * w).addScaledVector(nonYaw, -6 * w);
+  }
+
   fly(steer, dt) {
     this.airTime += dt;
     this.drifting = false;
@@ -2605,8 +2671,13 @@ class Car {
 
   collide(dt) {
     const contacts = [];
-    const lim = HalfWidth, t = WallThickness, h = WallHeight, d = SlabDepth;
+    const lim = HalfWidth, t = WallThickness, h = WallCollider, d = SlabDepth;
     const nearGround = this.pos.y - this.ground.height(this.pos.x, this.pos.z) < 6;
+    const com = this.comWorld();
+    // which side of the barriers is the car on? if its middle is on the road, anything poking
+    // into or through a barrier gets pushed back onto the road, never out the far side
+    const cf = this.ground.road(com);
+    const onRoad = !!cf && Math.abs(cf.x) < lim + 0.3 && cf.y > -0.2 && cf.y < WallCollider;
     const n = v3();
     for (const local of CarHull) {
       const p = this.point(local);
@@ -2617,20 +2688,16 @@ class Car {
         if (ax <= lim && f.y < 0 && f.y > -d) {
           const upD = -f.y, downD = f.y + d;
           if (upD <= downD) { depth = upD; n.copy(f.U); } else { depth = downD; n.copy(f.U).negate(); }
-        } else if (ax > lim && ax <= lim + t && f.y < h && f.y > -d) {
-          const options = [[h - f.y, 0], [ax - lim, 1], [lim + t - ax, 2], [f.y + d, 3]];
-          options.sort((a, b) => a[0] - b[0]);
-          depth = options[0][0];
-          switch (options[0][1]) {
-            case 0: n.copy(f.U); break;
-            case 1: n.copy(f.R).multiplyScalar(-side); wall = true; break;
-            case 2: n.copy(f.R).multiplyScalar(side); wall = true; break;
-            default: n.copy(f.U).negate();
-          }
+        } else if (ax > lim && f.y > -d && f.y < h) {
+          // barriers are taller to the car than they look, so it can't climb or vault them
+          if (onRoad && ax < lim + t + 2) { depth = ax - lim; n.copy(f.R).multiplyScalar(-side); wall = true; }
+          else if (!onRoad && ax <= lim + t) { depth = lim + t - ax; n.copy(f.R).multiplyScalar(side); wall = true; }
         }
         if (depth > 0) contacts.push({ p, n: n.clone(), depth, wall });
       }
-      if (nearGround) {
+      // past the edge of the road the barrier is what's there, not the hillside behind it
+      const behindBarrier = onRoad && f && Math.abs(f.x) > lim;
+      if (nearGround && !behindBarrier) {
         const gy = this.ground.height(p.x, p.z);
         if (p.y < gy) {
           const gn = this.ground.groundNormal(p.x, p.z, v3());
@@ -2640,19 +2707,25 @@ class Car {
     }
     if (!contacts.length) return;
 
-    const S = CarSpec, ii = this.iinv, m = S.mass;
-    let impact = 0, scraping = false;
+    const S = CarSpec, ii = this.iinv, m = S.mass, up = this.up;
+    let impact = 0, scraping = false, wallN = null;
     for (let iter = 0; iter < 4; iter++) {
       for (const c of contacts) {
-        const r = v3().subVectors(c.p, this.comWorld());
+        let r = v3().subVectors(c.p, com);
+        // a barrier pushes at the height of the car's middle, so hitting one turns the car
+        // but never rolls or flips it
+        if (c.wall) r.addScaledVector(up, -r.dot(up));
         const vp = v3().crossVectors(this.angVel, r).add(this.vel);
         const vn = vp.dot(c.n);
         if (vn >= 0) continue;
-        if (iter === 0) { impact = Math.max(impact, -vn); if (c.wall) scraping = true; }
+        if (iter === 0) { impact = Math.max(impact, -vn); if (c.wall) { scraping = true; wallN = c.n; } }
         const rn = v3().crossVectors(r, c.n);
         const k = 1 / m + c.n.dot(rn.applyMatrix3(ii).cross(r));
-        const j = -vn / k;
+        // walls give a little bounce back so the car glances off instead of sticking
+        const bounce = c.wall && iter === 0 ? 1 + Math.min(0.25, -vn * 0.02) : 1;
+        const j = -vn * bounce / k;
         this.applyImpulse(c.n.clone().multiplyScalar(j), r);
+        if (c.wall) continue;                // barriers are slick: slide along them
         const vt = vp.addScaledVector(c.n, -vn);
         const vtl = vt.length();
         if (vtl > 1e-4) {
@@ -2662,6 +2735,19 @@ class Car {
           const jt = Math.min(vtl / kt, S.friction * j);
           this.applyImpulse(tdir.multiplyScalar(-jt), r);
         }
+      }
+    }
+    // nose into a barrier: swing the car round to run along it, so it can't get stuck
+    if (wallN) {
+      // and keep it on its wheels while it's grinding along one
+      const yawPart = this.angVel.dot(up);
+      this.angVel.addScaledVector(up, -yawPart).multiplyScalar(0.9).addScaledVector(up, yawPart);
+      const fwd = this.forward, into = -fwd.dot(wallN);
+      if (into > 0.05) {
+        const along = fwd.clone().addScaledVector(wallN, into).normalize();
+        const yaw = v3().crossVectors(fwd, along).dot(up);
+        const rate = clamp(yaw * 9, -4, 4);
+        this.angVel.addScaledVector(up, rate - this.angVel.dot(up) * 0.5);
       }
     }
     // push out of whatever we sank into
@@ -3145,7 +3231,7 @@ class ChaseCam {
 // Online: a countdown to the host's GO time instead, no restart (everyone shares a clock),
 // and your time goes to the room instead of your records.
 
-const GridOffsets = [-1.15, 1.15, -3.35, 3.35];
+const GridOffsets = [-1.6, 1.6, -4.4, 4.4];
 
 class Race {
   constructor(world, cam, sync = null, slot = 0) {
@@ -3236,8 +3322,11 @@ class Race {
       return;
     }
     if (this.phase !== 'driving' || !this.haveCheckpoint) { if (!this.online) this.restart(); return; }
-    car.teleport(this.cp.pos, this.cp.rot, this.cp.vel, this.cp.ang);
-    this.afterRespawn(this.path.nearest(this.cp.pos, -1, 0));
+    // back to the middle of the road at the last checkpoint, pointing down the track and
+    // standing still, wherever the car was (in a barrier, in the water, upside down)
+    const i = this.cp, path = this.path;
+    car.teleport(path.pos[i].clone().addScaledVector(path.up[i], 0.05), path.rotationAt(i));
+    this.afterRespawn(i);
   }
 
   afterRespawn(index) {
@@ -3353,7 +3442,7 @@ class Race {
       if (this.bestSplits && this.checkpointsHit < this.bestSplits.length) diff = t - this.bestSplits[this.checkpointsHit];
       this.checkpointsHit++;
       this.haveCheckpoint = true;
-      this.cp = { pos: car.pos.clone(), rot: car.rot.clone(), vel: car.vel.clone(), ang: car.angVel.clone() };
+      this.cp = path.checkpoints[k];
       Sound.play('checkpoint');
       Hud.checkpoint(t, diff);
     }
@@ -3560,7 +3649,7 @@ const Net = (() => {
         state = 'room'; me = m.you; code = m.code; host = m.host; props = m.props || {};
         players = new Map(m.players.map(p => [p.id, p]));
         Sync.reset();
-        say(wantCreate ? 'Room made. Send your friends the code ' + code + '.' : 'You joined ' + code + '.', 'dim');
+        say(wantCreate ? 'Room ' + code : 'Joined ' + code, 'dim');
         emit('change');
         Game.showLobby();
         break;
@@ -4038,14 +4127,14 @@ const Menus = (() => {
     const el = h(`<div class="page">
       <div class="shade-left"></div>
       <div id="logo">${title.slice(0, cut + 1)}<b>${title.slice(cut + 1)}</b></div>
-      <div class="subtitle shadow" style="top:8.4em">Summer</div>
+      <div id="byline">By Caleb</div>
       <div class="menu-buttons">
         <button class="primary" data-a="play">Play</button>
         <button data-a="online">Multiplayer</button>
         <button data-a="settings">Settings</button>
         <button data-a="controls">Controls</button>
       </div>
-      <div class="corner-note">Medals ${medals} / ${Tracks.length * 4}<small>v2.0.0</small></div>
+      <div class="corner-note">${medals} / ${Tracks.length * 4} medals</div>
     </div>`);
     on(el, '[data-a]', (e, b) => {
       const a = b.dataset.a;
@@ -4091,7 +4180,6 @@ const Menus = (() => {
         <div class="label">Medals</div>
         ${times.map(([m, t]) => { const got = pb > 0 && pb <= t; return `<div class="mrow">${got ? medalDot(m) : medalDot(0)}<span style="color:${got ? MEDALS[m].color.css() : 'inherit'}">${MEDALS[m].name}</span><span>${formatTime(t)}</span></div>`; }).join('')}
         <button class="primary race-btn" data-a="race">Race</button>
-        <div class="hint">or press Enter</div>
       </div>
     </div>`);
     on(el, '[data-a=back]', () => Game.showMain());
@@ -4136,7 +4224,6 @@ const Menus = (() => {
     ];
     const el = card('Settings', `<div>${rows.map((r, i) => `<div class="row"><span class="l">${r[0]}</span>
       ${r[3] ? `<span class="swatch" data-sw></span>` : ''}<button data-r="${i}" data-d="-1">&lt;</button><span class="v" data-v="${i}"></span><button data-r="${i}" data-d="1">&gt;</button></div>`).join('')}</div>
-      <div class="dim" style="text-align:center;font-size:1.8em;margin-top:1.4em">Graphics changes to trees and terrain show up on the next track you load.</div>
       <div class="buttons-row"><button data-a="reset" style="width:15em">Reset times</button><button class="primary" data-a="done" style="width:15em">Done</button></div>`);
     const refresh = () => {
       rows.forEach((r, i) => { el.querySelector(`[data-v="${i}"]`).textContent = r[1](); });
@@ -4184,18 +4271,16 @@ const Menus = (() => {
       <div class="shade-left" style="width:64em"></div>
       <button class="back small" data-a="back">Back</button>
       <div class="heading shadow" style="left:1.8em;top:2.2em">Multiplayer</div>
-      <div class="dim" style="position:absolute;left:3.1em;top:7.9em;width:22em;font-size:2.4em">One of you hosts and gets a room code. Everyone else types it in.</div>
       <div class="field-label" style="left:3.36em;top:13.3em">Your name</div>
-      <div style="position:absolute;left:7.4em;top:32.4em;width:52em"><input id="f-name" maxlength="16" placeholder="Pick a name"></div>
+      <div style="position:absolute;left:7.4em;top:32.4em;width:52em"><input id="f-name" maxlength="16" placeholder="name"></div>
       <div class="field-label" style="left:3.36em;top:18.6em">Server</div>
-      <div style="position:absolute;left:7.4em;top:44em;width:52em"><input id="f-server" maxlength="80" placeholder="address of the computer running server.js"></div>
+      <div style="position:absolute;left:7.4em;top:44em;width:52em"><input id="f-server" maxlength="80" placeholder="server address"></div>
       <button class="primary" data-a="host" style="position:absolute;left:2.18em;top:16.6em;width:15.3em;font-size:3.4em">Host a game</button>
-      <div class="field-label" style="left:3.36em;top:30.4em">or join one</div>
-      <div style="position:absolute;left:7.4em;top:70em;width:30em"><input id="f-code" maxlength="8" placeholder="Room code" style="font-size:3.4em;text-transform:uppercase"></div>
+      <div class="field-label" style="left:3.36em;top:30.4em">Room code</div>
+      <div style="position:absolute;left:7.4em;top:70em;width:30em"><input id="f-code" maxlength="8" placeholder="CODE" style="font-size:3.4em;text-transform:uppercase"></div>
       <button data-a="join" style="position:absolute;left:12em;top:21.7em;width:6.2em;font-size:3.2em">Join</button>
       <div class="status" id="status" style="left:3.1em;top:34em;width:30em"></div>
       <button data-a="cancel" class="small hidden" style="position:absolute;left:3.7em;top:46em">Cancel</button>
-      <div class="dim" style="position:absolute;left:4.1em;bottom:4em;width:29em;font-size:1.8em;opacity:0.7">The server is your relay server (port 8080 for browsers). If you opened the game from it, the address is already filled in.</div>
     </div>`);
     el.querySelector('#f-name').value = name;
     el.querySelector('#f-server').value = store.get('server', '') || Net.defaultServer();
@@ -4325,13 +4410,13 @@ const Menus = (() => {
     $('l-swatch').style.background = Settings.CarColors[Settings.values.car].css();
     $('l-car').textContent = Settings.CarColorNames[Settings.values.car];
     const racing = phase && phase !== 'lobby';
-    $('l-note').textContent = racing ? "There's a race going on. You'll be in the next one." : '';
+    $('l-note').textContent = racing ? 'Race in progress, you\'re in the next one' : '';
     const start = pages.querySelector('[data-a=start]');
     start.classList.toggle('hidden', !host || racing);
     start.disabled = !Sync.canStart;
     $('l-start').textContent = host
-      ? (racing ? '' : list.length < 2 ? 'You can start on your own, or wait for friends.' : "Start when everyone's in.")
-      : (!racing && Net.hostId ? 'Waiting for ' + Net.nameOf(Net.hostId) + ' to start the race' : '');
+      ? ''
+      : (!racing && Net.hostId ? 'Waiting for ' + Net.nameOf(Net.hostId) : '');
   }
 
   function refreshChat() {
@@ -4408,8 +4493,7 @@ const Hud = (() => {
         <button data-p="tracks">Tracks</button><button data-p="menu">Main menu</button></div></div></div>
     <div id="finish" class="hidden"><div class="dim-bg"></div><div class="card center-card" style="width:72em"></div></div>
     <div id="omenu" class="hidden"><div class="dim-bg" style="background:rgba(5,8,18,0.55)"></div>
-      <div class="card center-card" style="width:52em"><h2 style="margin-bottom:0.2em">Menu</h2>
-        <div class="dim" style="font-size:2em;margin-bottom:2em">The race keeps going while this is open</div><div class="list">
+      <div class="card center-card" style="width:52em"><h2>Menu</h2><div class="list">
         <button class="primary" data-o="back">Back to the race</button><button data-o="settings">Settings</button><button data-o="leave">Leave room</button></div></div></div>
     <div id="results" class="hidden"><div class="dim-bg"></div><div class="card center-card"></div></div>`;
 
@@ -4453,7 +4537,7 @@ const Hud = (() => {
     if (!el('results').classList.contains('hidden') && resultsFor === Sync.raceId) {
       const b = el('results').querySelector('[data-r=lobby]');
       if (b) b.classList.toggle('hidden', !host);
-      el('results').querySelector('.foot').textContent = host ? 'Everyone goes back to the lobby when you do' : 'Waiting for the host to go back to the lobby';
+      el('results').querySelector('.foot').textContent = host ? '' : 'Waiting on the host';
       return;
     }
     resultsFor = Sync.raceId;
@@ -4478,7 +4562,7 @@ const Hud = (() => {
           ${medalDot(0).replace('rgba(255,255,255,0.18)', Settings.CarColors[clamp(r.car, 0, 7)].css())}<span class="n">${esc(r.name)}${me ? '  <span class="dim">(you)</span>' : ''}</span><span class="t">${time}</span></div>`;
       }).join('')}
       <div class="buttons-row"><button class="primary ${host ? '' : 'hidden'}" data-r="lobby" style="width:13em">Back to lobby</button><button data-r="leave" style="width:13em">Leave room</button></div>
-      <div class="foot">${host ? 'Everyone goes back to the lobby when you do' : 'Waiting for the host to go back to the lobby'}</div>`;
+      <div class="foot">${host ? '' : 'Waiting on the host'}</div>`;
     on(el('results'), '[data-r=lobby]', () => Sync.backToLobby());
     on(el('results'), '[data-r=leave]', () => Net.leave());
   }
@@ -4505,7 +4589,7 @@ const Hud = (() => {
     bind(r, i) {
       race = r; info = i;
       el('title').textContent = (i.index + 1) + '.  ' + i.name;
-      el('keys-hint').textContent = r.online ? 'Enter or R  last checkpoint    H  horn    C  camera    Esc  menu' : 'R restart    Enter checkpoint    C camera    Esc pause';
+      el('keys-hint').textContent = r.online ? '' : '';
       refreshTimes();
       el('online').classList.toggle('hidden', !r.online);
       el('results').classList.add('hidden');
@@ -4544,7 +4628,7 @@ const Hud = (() => {
     finished(time, before, record, medal, newMedal) {
       el('split').classList.add('hidden');
       let sub, subColor = 'var(--dim)';
-      if (before <= 0) sub = 'First time on this track';
+      if (before <= 0) sub = '';
       else if (time < before) { sub = formatDelta(time - before) + ' faster than before'; subColor = '#73bfff'; }
       else sub = 'Best is ' + formatTime(before) + '  (' + formatDelta(time - before) + ')';
       const c = el('finish').querySelector('.card');
@@ -4597,7 +4681,7 @@ const Hud = (() => {
       const left = race.countdownLeft;
       const cd = el('countdown'), wait = el('waiting');
       if (race.phase === 'ready') {
-        if (isNaN(left)) { cd.textContent = ''; wait.textContent = 'Waiting for everyone to load the track...'; }
+        if (isNaN(left)) { cd.textContent = ''; wait.textContent = 'Loading'; }
         else {
           wait.textContent = left > 3 ? 'Get ready' : '';
           cd.textContent = left > 3 ? '' : Math.ceil(left);
