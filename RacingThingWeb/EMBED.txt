@@ -1,0 +1,26 @@
+Putting Drifters on another website
+===================================
+
+Replace YOURGAME.onrender.com with your Render address. Either way the game still
+connects back to your Render server for multiplayer, as if it was on the real site.
+
+1) As a frame (simplest). Paste this into the other site's page:
+
+<iframe src="https://YOURGAME.onrender.com/"
+        style="border:0; width:100%; height:100vh"
+        allow="autoplay; fullscreen; gamepad"></iframe>
+
+2) Loaded in as the page itself (no frame). Make a page on the other site with just this:
+
+<!doctype html>
+<html><body><script>
+fetch('https://YOURGAME.onrender.com/')
+  .then(r => r.text())
+  .then(html => { document.open(); document.write(html); document.close(); });
+</script></body></html>
+
+Notes
+- Your server needs the new server.js / WebRelay.cs from this update (it lets other
+  sites fetch the page and tells the game where home is).
+- Free Render sites go to sleep: the first visit after a while can take ~30 s.
+- Best times are saved per website, so they won't carry over between the two.

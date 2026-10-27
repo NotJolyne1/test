@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Race</title>
+<title>Drifters</title>
 <style>
 :root {
   --panel: rgba(18, 23, 41, 0.84);
@@ -218,6 +218,7 @@ input::placeholder { font-style: normal; text-transform: uppercase; letter-spaci
 .heading { font-weight: 900; }
 #logo { font-weight: 900; line-height: 0.9; text-shadow: 0.06em 0.06em 0 rgba(0, 0, 0, 0.55); }
 #logo b { display: block; color: var(--accent); }
+.powered { position: absolute; left: 0; right: 0; bottom: 1.6em; text-align: center; font-size: 1.8em; color: rgba(255, 255, 255, 0.5); letter-spacing: 0.1em; text-transform: uppercase; }
 #byline { position: absolute; left: 2.75em; top: 8.7em; font-size: 2.6em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.75); }
 .corner-note { color: rgba(255, 255, 255, 0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 2em; }
 .tcard { background: rgba(14, 16, 26, 0.9); }
@@ -3596,6 +3597,9 @@ const Net = (() => {
   function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
 
   function defaultServer() {
+    // the server stamps its own address into the page, so this still works when another
+    // website fetches the game or shows it in a frame
+    if (window.GAME_SERVER) return window.GAME_SERVER;
     if (location.protocol === 'http:' || location.protocol === 'https:') return location.host;
     return '10.18.98.171:8080';
   }
@@ -3607,7 +3611,9 @@ const Net = (() => {
     // a bare IP or localhost means server.js / the relay on 8080; a web address (like a
     // Render site) already has its own port
     if (!/:\d+$/.test(a) && (/^[\d.]+$/.test(a) || a === 'localhost')) a += ':8080';
-    return (location.protocol === 'https:' ? 'wss://' : 'ws://') + a;
+    // web addresses (a Render site and so on) are https, so use a secure socket for them too
+    const local = /^[\d.]+(:\d+)?$/.test(a) || /^localhost(:\d+)?$/.test(a);
+    return (location.protocol === 'https:' || !local ? 'wss://' : 'ws://') + a;
   }
 
   function connect(name, address, create, joinCode) {
@@ -4149,7 +4155,7 @@ const Menus = (() => {
     page = 'main';
     let medals = 0;
     for (const t of Tracks) medals += Records.medalFor(t, Records.best(t.id));
-    const title = 'Race', cut = title.lastIndexOf(' ');
+    const title = 'Drifters', cut = title.lastIndexOf(' ');
     const el = h(`<div class="page">
       <div class="shade-left"></div>
       <div id="logo">${title.slice(0, cut + 1)}<b>${title.slice(cut + 1)}</b></div>
@@ -4161,6 +4167,7 @@ const Menus = (() => {
         <button data-a="controls">Controls</button>
       </div>
       <div class="corner-note">${medals} / ${Tracks.length * 4} medals</div>
+      <div class="powered">Powered by RelayNetworking (™ Caleb 2026)</div>
     </div>`);
     on(el, '[data-a]', (e, b) => {
       const a = b.dataset.a;
@@ -4309,7 +4316,7 @@ const Menus = (() => {
       <button data-a="cancel" class="small hidden" style="position:absolute;left:3.7em;top:46em">Cancel</button>
     </div>`);
     el.querySelector('#f-name').value = name;
-    el.querySelector('#f-server').value = store.get('server', '') || Net.defaultServer();
+    el.querySelector('#f-server').value = window.GAME_SERVER || store.get('server', '') || Net.defaultServer();
     const code = el.querySelector('#f-code');
     code.addEventListener('input', () => { code.value = code.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
     code.addEventListener('keydown', e => { if (e.key === 'Enter') join(); });

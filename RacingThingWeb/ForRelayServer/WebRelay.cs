@@ -97,13 +97,16 @@ namespace RelayNetworking.Server.Web
                 var lines = head.Split(new[] { "\r\n" }, StringSplitOptions.None);
                 var first = lines[0].Split(' ');
                 string url = first.Length > 1 ? first[1] : "/";
-                string? key = null;
+                string? key = null, host = null;
                 foreach (var l in lines)
                 {
                     int i = l.IndexOf(':');
-                    if (i > 0 && l.Substring(0, i).Trim().Equals("Sec-WebSocket-Key", StringComparison.OrdinalIgnoreCase)) key = l.Substring(i + 1).Trim();
+                    if (i <= 0) continue;
+                    string name = l.Substring(0, i).Trim();
+                    if (name.Equals("Sec-WebSocket-Key", StringComparison.OrdinalIgnoreCase)) key = l.Substring(i + 1).Trim();
+                    else if (name.Equals("Host", StringComparison.OrdinalIgnoreCase)) host = l.Substring(i + 1).Trim();
                 }
-                if (key == null) { ServePage(s, url); client.Close(); return; }
+                if (key == null) { ServePage(s, first[0], url, host); client.Close(); return; }
 
                 string accept;
                 using (var sha = SHA1.Create())
@@ -139,13 +142,28 @@ namespace RelayNetworking.Server.Web
             return null;
         }
 
-        static void ServePage(Stream s, string url)
+        // The page is stamped with the address it was asked for, so it still connects back here
+        // when another website fetches it or shows it in a frame. Any site may fetch it.
+        static void ServePage(Stream s, string method, string url, string? host)
         {
             string? page = FindPage();
             bool wanted = url == "/" || url.StartsWith("/index.html") || url.StartsWith("/?");
-            byte[] body = wanted && page != null ? File.ReadAllBytes(page) : Encoding.UTF8.GetBytes(page == null ? "index.html isn't next to the relay server" : "");
-            string status = wanted && page != null ? "200 OK" : "404 Not Found";
-            var h = Encoding.ASCII.GetBytes($"HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-cache\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
+            byte[] body;
+            string status;
+            if (method == "OPTIONS") { body = Array.Empty<byte>(); status = "204 No Content"; }
+            else if (wanted && page != null)
+            {
+                string html = File.ReadAllText(page);
+                if (host != null && host.All(c => char.IsLetterOrDigit(c) || c == '.' || c == ':' || c == '-'))
+                {
+                    int at = html.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
+                    if (at >= 0) html = html.Insert(at + 6, "<script>window.GAME_SERVER=\"" + host + "\";</script>");
+                }
+                body = Encoding.UTF8.GetBytes(html);
+                status = "200 OK";
+            }
+            else { body = Encoding.UTF8.GetBytes(page == null ? "index.html isn't next to the relay server" : ""); status = "404 Not Found"; }
+            var h = Encoding.ASCII.GetBytes($"HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\nCache-Control: no-cache\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Methods: GET, OPTIONS\r\nContent-Length: {body.Length}\r\nConnection: close\r\n\r\n");
             s.Write(h, 0, h.Length);
             s.Write(body, 0, body.Length);
             s.Flush();

@@ -1,4 +1,4 @@
-# Race (web)
+# Drifters (web)
 
 The whole game is one file, `index.html`: all 13 tracks, ghosts, medals, settings, sounds and
 online races.

@@ -1,4 +1,4 @@
-// Racing Thing multiplayer server.
+// Drifters multiplayer server.
 //
 //   node server.js            (port 8080)
 //   node server.js 3000       (any other port)
@@ -259,16 +259,23 @@ class Player {
   }
 }
 
+// The page is stamped with the address it was asked for, so it still connects back here when
+// another website fetches it or shows it in a frame. Any site may fetch it.
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS' };
+
 const server = http.createServer((req, res) => {
+  if (req.method === 'OPTIONS') { res.writeHead(204, CORS); res.end(); return; }
   if (req.url === '/' || req.url.startsWith('/index.html') || req.url.startsWith('/?')) {
-    fs.readFile(PAGE, (err, data) => {
-      if (err) { res.writeHead(404); res.end('index.html is missing next to server.js'); return; }
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
-      res.end(data);
+    fs.readFile(PAGE, 'utf8', (err, html) => {
+      if (err) { res.writeHead(404, CORS); res.end('index.html is missing next to server.js'); return; }
+      const host = req.headers.host || '';
+      if (/^[A-Za-z0-9.:-]+$/.test(host)) html = html.replace(/<head>/i, '<head><script>window.GAME_SERVER="' + host + '";</script>');
+      res.writeHead(200, Object.assign({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' }, CORS));
+      res.end(html);
     });
     return;
   }
-  res.writeHead(404);
+  res.writeHead(404, CORS);
   res.end();
 });
 
@@ -305,7 +312,7 @@ setInterval(() => {
 function log(s) { console.log(new Date().toLocaleTimeString() + '  ' + s); }
 
 server.listen(PORT, () => {
-  console.log('Racing Thing server is running.\n');
+  console.log('Drifters server is running.\n');
   console.log('On this computer open:     http://localhost:' + PORT);
   const nets = os.networkInterfaces();
   for (const list of Object.values(nets))
