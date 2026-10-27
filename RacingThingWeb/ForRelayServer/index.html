@@ -3489,7 +3489,9 @@ const Net = (() => {
     let a = (address || '').trim() || defaultServer();
     if (/^wss?:\/\//.test(a)) return a;
     a = a.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (!/:\d+$/.test(a) && !a.includes(']')) a += ':8080';
+    // a bare IP or localhost means server.js / the relay on 8080; a web address (like a
+    // Render site) already has its own port
+    if (!/:\d+$/.test(a) && (/^[\d.]+$/.test(a) || a === 'localhost')) a += ':8080';
     return (location.protocol === 'https:' ? 'wss://' : 'ws://') + a;
   }
 
@@ -3670,13 +3672,15 @@ const Net = (() => {
       if (state !== 'room') return;
       if ((pingTimer -= dt) <= 0) { pingTimer = 2; syncClock(); }
       Sync.update(dt);
-      // send our car about 20 times a second while racing
+      // send our car 30 times a second while racing. p also carries our velocity and the
+      // time we sent it, so the others can place us smoothly however bumpy the connection is
       const race = Game.race;
       if (race && race.online && (carTimer -= dt) <= 0) {
-        carTimer = 0.05;
-        const c = race.car;
+        carTimer = Math.max(carTimer + 1 / 30, 0);
+        const c = race.car, v = c.vel;
         const r = n => Math.round(n * 1000) / 1000;
-        send({ t: 'car', p: [r(c.pos.x), r(c.pos.y), r(c.pos.z)], q: [r(c.rot.x), r(c.rot.y), r(c.rot.z), r(c.rot.w)], c: race.checkpointsHit, r: Sync.raceId });
+        send({ t: 'car', p: [r(c.pos.x), r(c.pos.y), r(c.pos.z), r(v.x), r(v.y), r(v.z), r(performance.now() / 1000)],
+          q: [r(c.rot.x), r(c.rot.y), r(c.rot.z), r(c.rot.w)], c: race.checkpointsHit, r: Sync.raceId });
       }
       RemoteCars.render(dt);
     },
@@ -3845,12 +3849,20 @@ const Sync = (() => {
 // Each car is played back a little in the past so it moves smoothly between updates.
 
 const RemoteCars = (() => {
+  // Other players' cars. Each update carries the time it was sent on the sender's clock, so
+  // updates that arrive in bursts (busy Wi-Fi, a far away server) still play back evenly.
+  // We draw everyone a little in the past, with a buffer that grows when the connection is
+  // bumpy and shrinks when it's smooth, and carry on along their velocity if updates stall.
+  const MinDelay = 0.06, MaxDelay = 0.6, MaxAhead = 0.7;
   const cars = new Map();
-  const Delay = 0.12, MaxAhead = 0.3;
 
   function get(id) {
     let c = cars.get(id);
-    if (!c) { c = { id, snaps: [], view: null, color: -1, tag: null, race: -1, hint: -1, checkpoints: 0, pos: v3(), rot: new Quat(), spin: 0 }; cars.set(id, c); }
+    if (!c) {
+      c = { id, snaps: [], lat: [], view: null, color: -1, tag: null, race: -1, hint: -1, checkpoints: 0,
+        pos: v3(), rot: new Quat(), spin: 0, delay: 0.12, target: 0.12, shown: false, tp: v3(), tq: new Quat() };
+      cars.set(id, c);
+    }
     return c;
   }
 
@@ -3860,19 +3872,56 @@ const RemoteCars = (() => {
     if (c.horn) c.horn = null;
   }
 
+  // where the car was at sender time t (between snapshots, or carried on past the last one)
+  function sample(c, t, outP, outQ) {
+    const S = c.snaps, n = S.length;
+    if (t <= S[0].s) { outP.copy(S[0].p); outQ.copy(S[0].q); return; }
+    for (let i = 0; i < n - 1; i++) {
+      const a = S[i], b = S[i + 1];
+      if (t > b.s) continue;
+      const span = Math.max(1e-4, b.s - a.s), k = (t - a.s) / span;
+      // cubic between the two, using both velocities, so corners stay round
+      const k2 = k * k, k3 = k2 * k;
+      const h00 = 2 * k3 - 3 * k2 + 1, h10 = k3 - 2 * k2 + k, h01 = -2 * k3 + 3 * k2, h11 = k3 - k2;
+      outP.set(
+        h00 * a.p.x + h10 * span * a.v.x + h01 * b.p.x + h11 * span * b.v.x,
+        h00 * a.p.y + h10 * span * a.v.y + h01 * b.p.y + h11 * span * b.v.y,
+        h00 * a.p.z + h10 * span * a.v.z + h01 * b.p.z + h11 * span * b.v.z);
+      outQ.slerpQuaternions(a.q, b.q, k);
+      return;
+    }
+    const last = S[n - 1], ahead = Math.min(t - last.s, MaxAhead);
+    outP.copy(last.p).addScaledVector(last.v, ahead);
+    outQ.copy(last.q);
+  }
+
   return {
     update(m) {
       const c = get(m.id);
-      if (m.r !== c.race) { c.race = m.r; c.snaps.length = 0; c.hint = -1; }
-      const now = performance.now() / 1000;
-      const s = { t: now, p: v3(m.p[0], m.p[1], m.p[2]), q: new Quat(m.q[0], m.q[1], m.q[2], m.q[3]).normalize() };
+      if (m.r !== c.race) { c.race = m.r; c.snaps.length = 0; c.lat.length = 0; c.hint = -1; c.shown = false; }
+      const now = performance.now() / 1000, p = m.p;
+      const timed = p.length >= 7;
+      const s = {
+        s: timed ? p[6] : now,
+        p: v3(p[0], p[1], p[2]),
+        v: timed ? v3(p[3], p[4], p[5]) : v3(),
+        q: new Quat(m.q[0], m.q[1], m.q[2], m.q[3]).normalize(),
+      };
       const last = c.snaps[c.snaps.length - 1];
-      if (last) {
-        if (last.p.distanceToSquared(s.p) > 40 * 40) c.snaps.length = 0;     // a respawn: jump, don't slide
-        else s.t = Math.max(s.t, last.t + 0.015);
-      }
+      if (last && s.s <= last.s) return;                                   // old or repeated
+      if (last && last.p.distanceToSquared(s.p) > 40 * 40) { c.snaps.length = 0; c.shown = false; }  // a respawn: jump, don't slide
+      if (!timed && last) s.v.subVectors(s.p, last.p).divideScalar(Math.max(0.016, s.s - last.s));
       c.snaps.push(s);
-      while (c.snaps.length > 2 && c.snaps[1].t < now - 1) c.snaps.shift();
+      while (c.snaps.length > 3 && c.snaps[1].s < s.s - 1.5) c.snaps.shift();
+
+      // how late do their updates get here? the quickest one is "on time"; the spread above
+      // that is the jitter we need to cover with the buffer
+      c.lat.push([now, now - s.s]);
+      while (c.lat.length > 2 && c.lat[0][0] < now - 4) c.lat.shift();
+      let lo = Infinity, hi = -Infinity;
+      for (const [, l] of c.lat) { if (l < lo) lo = l; if (l > hi) hi = l; }
+      c.offset = lo;
+      c.target = clamp(hi - lo + 0.045, MinDelay, MaxDelay);
       c.checkpoints = m.c | 0;
     },
 
@@ -3884,6 +3933,9 @@ const RemoteCars = (() => {
       const right = Game.race.car.right, pan = clamp(v3().subVectors(c.pos, cam).normalize().dot(right), -1, 1);
       Sound.play('horn', 0.7 * clamp01(1 - d / 180), 1, pan);
     },
+
+    // where another player's car is drawn right now (tests use this too)
+    drawnAt(id) { const c = cars.get(id); return c && c.shown ? c.pos : null; },
 
     remove(id) { const c = cars.get(id); if (c) { drop(c); cars.delete(id); } },
     clear() { for (const c of cars.values()) drop(c); cars.clear(); },
@@ -3900,7 +3952,7 @@ const RemoteCars = (() => {
     },
 
     render(dt) {
-      const now = performance.now() / 1000, t = now - Delay;
+      const now = performance.now() / 1000;
       const showAll = Game.view === 'race' && Net.inRoom;
       for (const c of cars.values()) {
         const show = showAll && c.snaps.length > 0 && c.race === Sync.raceId && Sync.isRacer(c.id);
@@ -3912,25 +3964,16 @@ const RemoteCars = (() => {
         const p = Net.player(c.id), color = Net.carOf(p);
         if (!c.view || c.color !== color) { if (c.view) c.view.dispose(); c.view = new CarView(color); c.color = color; }
         c.view.visible = true;
-        const S = c.snaps, n = S.length;
+        // grow the buffer quickly when updates get bumpy, shrink it slowly when they settle
+        c.delay += (c.target - c.delay) * Math.min(1, dt * (c.target > c.delay ? 6 : 0.4));
         const before = c.pos.clone();
-        if (n === 1 || t <= S[0].t) { c.pos.copy(S[0].p); c.rot.copy(S[0].q); }
+        sample(c, now - c.offset - c.delay, c.tp, c.tq);
+        // ease toward where they should be so a late correction is a slide, not a jump
+        if (!c.shown || c.pos.distanceToSquared(c.tp) > 15 * 15) { c.pos.copy(c.tp); c.rot.copy(c.tq); c.shown = true; }
         else {
-          let placed = false;
-          for (let i = 0; i < n - 1; i++) {
-            if (t > S[i + 1].t) continue;
-            const k = (t - S[i].t) / Math.max(1e-4, S[i + 1].t - S[i].t);
-            c.pos.lerpVectors(S[i].p, S[i + 1].p, k);
-            c.rot.slerpQuaternions(S[i].q, S[i + 1].q, k);
-            placed = true;
-            break;
-          }
-          if (!placed) {
-            const a = S[n - 2], b = S[n - 1];
-            const ahead = Math.min(t - b.t, MaxAhead), span = Math.max(0.001, b.t - a.t);
-            c.pos.copy(b.p).addScaledVector(v3().subVectors(b.p, a.p), ahead / span);
-            c.rot.copy(b.q);
-          }
+          const k = 1 - Math.exp(-dt * 25);
+          c.pos.lerp(c.tp, k);
+          c.rot.slerp(c.tq, k);
         }
         c.view.place(c.pos, c.rot);
         const fwd = v3(0, 0, 1).applyQuaternion(c.rot);
