@@ -1,0 +1,4580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caleb's Games</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+            font-size: 14px;
+            margin: 0;
+            padding: 0;
+            background-color: #0f0f0f;
+            color: #eeeeee;
+            min-height: 100vh;
+            position: relative;
+        }
+        #mainAppLayout {
+            display: none;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 20px 70px 20px;
+        }
+        .top {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 12px 0 0;
+        }
+        .search-container {
+            flex: 1;
+            min-width: 200px;
+            max-width: 380px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-bar {
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 14px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            border: 1px solid #2e2e2e;
+            border-radius: 6px;
+            outline: none;
+        }
+        .search-bar:focus {
+            border-color: #666666;
+        }
+        .game-count-label {
+            font-size: 13px;
+            color: #888888;
+            white-space: nowrap;
+        }
+        .filters {
+            display: flex;
+            gap: 8px;
+        }
+        .control-btn {
+            background-color: #1a1a1a;
+            color: #dddddd;
+            border: 1px solid #333333;
+            padding: 8px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        .control-btn:hover {
+            background-color: #262626;
+            border-color: #555555;
+        }
+        .control-btn.on {
+            background-color: #2c2c2c;
+            border-color: #777777;
+            color: #ffffff;
+        }
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+        .menu {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            width: 100%;
+        }
+        .game-item {
+            position: relative;
+        }
+        .btn {
+            width: 100%;
+            text-align: left;
+            background-color: #1a1a1a;
+            color: #eeeeee;
+            border: 1px solid #2a2a2a;
+            padding: 14px 34px 14px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-transform: capitalize;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background-color: #232323;
+            border-color: #555555;
+        }
+        .btn.favorited {
+            border-color: #8a7a2a;
+        }
+        .new-tag {
+            position: absolute;
+            left: 12px;
+            bottom: 4px;
+            font-size: 9px;
+            color: #6fbf73;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+        }
+        .fav-btn {
+            position: absolute;
+            top: 50%;
+            right: 6px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            width: 24px;
+            height: 24px;
+            font-size: 15px;
+            cursor: pointer;
+            color: #444444;
+            padding: 0;
+            z-index: 10;
+        }
+        .fav-btn:hover {
+            color: #aaaaaa;
+        }
+        .fav-btn.active {
+            color: #ffd700;
+        }
+        .fav-section-label {
+            grid-column: 1 / -1;
+            font-size: 12px;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .fav-divider {
+            grid-column: 1 / -1;
+            width: 100%;
+            border: none;
+            border-top: 1px solid #262626;
+            margin: 4px 0 8px 0;
+        }
+        .empty-note {
+            grid-column: 1 / -1;
+            color: #777777;
+            font-size: 14px;
+            padding: 20px 0;
+        }
+
+        body.classic {
+            padding: 20px;
+            background-color: #121212;
+            color: #ffffff;
+        }
+        body.classic .container {
+            align-items: center;
+            padding: 0 0 60px 0;
+        }
+        body.classic .top {
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 0;
+            width: 100%;
+        }
+        body.classic h1 {
+            font-size: 32px;
+            text-align: center;
+            margin: 0 0 15px 0;
+        }
+        body.classic .search-container {
+            width: 100%;
+            max-width: 400px;
+            flex: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        body.classic .search-bar {
+            padding: 12px 16px;
+            font-size: 16px;
+            border-radius: 8px;
+            border-color: #3d3d3d;
+            transition: border-color 0.2s;
+        }
+        body.classic .search-bar:focus {
+            border-color: #00ffff;
+        }
+        body.classic .game-count-label {
+            font-size: 14px;
+            color: #00ffff;
+            font-weight: 600;
+        }
+        body.classic .filters {
+            margin-bottom: 20px;
+        }
+        body.classic .menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+        body.classic .game-item {
+            display: inline-block;
+        }
+        body.classic .btn {
+            width: auto;
+            text-align: center;
+            background-color: #242424;
+            border-color: #3d3d3d;
+            padding: 12px 24px;
+            font-size: 15px;
+            text-transform: uppercase;
+            overflow: visible;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        body.classic .btn:hover {
+            background-color: #2a2a2a;
+            border-color: #00ffff;
+        }
+        body.classic .btn.favorited {
+            border-color: #ffd700;
+        }
+        body.classic .new-tag {
+            display: none;
+        }
+        body.classic .fav-btn {
+            top: -19px;
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            border: 1px solid #444444;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            font-size: 14px;
+            line-height: 24px;
+            text-align: center;
+            color: #666666;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+        }
+        body.classic .game-item:hover .fav-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        body.classic .fav-btn.active {
+            color: #ffd700;
+            border-color: #ffd700;
+        }
+        body.classic .fav-btn:hover {
+            background: #2a2a2a;
+        }
+        body.classic .fav-section-label {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 4px;
+        }
+        body.classic .fav-divider {
+            margin: 8px 0 12px 0;
+        }
+        body.classic .empty-note {
+            width: 100%;
+            text-align: center;
+        }
+
+        .game-view-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000000;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        .control-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(20, 20, 20, 0.85);
+            padding: 10px 20px;
+            border-bottom: 1px solid #2d2d2d;
+        }
+        .iframe-wrapper {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0a0a0a;
+            pointer-events: none;
+            z-index: 10001;
+            transition: opacity 0.5s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            color: #ffffff;
+        }
+        .log-mode {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            overflow-y: auto;
+            text-align: center;
+        }
+        .log-entry {
+            margin: 4px 0;
+            white-space: pre-wrap;
+            color: #00ff00;
+        }
+        .log-warn {
+            color: #ffaa00;
+        }
+        .log-error {
+            color: #ff3333;
+        }
+        .log-info {
+            color: #00ffff;
+        }
+        .version-info {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            font-size: 13px;
+            color: #888888;
+            user-select: none;
+            pointer-events: none;
+            z-index: 10000;
+            background-color: rgba(18, 18, 18, 0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .dev-toggle-btn {
+            position: fixed;
+            bottom: 15px;
+            left: 15px;
+            font-size: 12px;
+            background-color: #1a1a1a;
+            color: #888888;
+            border: 1px solid #333333;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10000;
+        }
+        .dev-toggle-btn.enabled {
+            color: #ffffff;
+            border-color: #555555;
+            background-color: #2a2a2a;
+        }
+        #debugPanel {
+            display: none;
+            position: fixed;
+            left: 15px;
+            bottom: 50px;
+            width: min(620px, calc(100vw - 30px));
+            height: min(380px, calc(100vh - 80px));
+            z-index: 25000;
+            flex-direction: column;
+            background: #0b0b0b;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 11px;
+            color: #bbbbbb;
+        }
+        #debugPanel.open {
+            display: flex;
+        }
+        .dbg-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 8px;
+            border-bottom: 1px solid #262626;
+            background: #121212;
+            flex-wrap: wrap;
+        }
+        .dbg-head button {
+            background: #1a1a1a;
+            color: #bbbbbb;
+            border: 1px solid #333333;
+            border-radius: 3px;
+            padding: 2px 8px;
+            font: inherit;
+            cursor: pointer;
+        }
+        .dbg-head button:hover {
+            border-color: #555555;
+            color: #ffffff;
+        }
+        .dbg-title {
+            color: #ffffff;
+        }
+        .dbg-spacer {
+            flex: 1;
+        }
+        #dbgList {
+            flex: 1;
+            overflow: auto;
+            padding: 4px 0;
+        }
+        .dbg-row {
+            display: grid;
+            grid-template-columns: 62px 86px 1fr;
+            gap: 6px;
+            padding: 2px 8px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .dbg-row:hover {
+            background: #151515;
+        }
+        .dbg-json {
+            cursor: pointer;
+        }
+        .dbg-row pre {
+            grid-column: 1 / -1;
+            margin: 4px 0 4px 68px;
+            padding: 6px 8px;
+            max-width: none;
+            background: #111111;
+            border: 1px solid #222222;
+            border-radius: 3px;
+            font-size: 11px;
+            color: #cccccc;
+            text-align: left;
+        }
+        .dbg-time {
+            color: #555555;
+        }
+        .dbg-kind {
+            color: #777777;
+        }
+        .dbg-to .dbg-kind {
+            color: #7fa8e0;
+        }
+        .dbg-from .dbg-kind {
+            color: #8cc68c;
+        }
+        .dbg-warn .dbg-kind,
+        .dbg-warn .dbg-text {
+            color: #e0b84c;
+        }
+        .dbg-error .dbg-kind,
+        .dbg-error .dbg-text {
+            color: #ff7777;
+        }
+
+        #chatToggle {
+            position: fixed;
+            bottom: 52px;
+            right: 15px;
+            z-index: 20000;
+        }
+        #chatToggle.unread {
+            border-color: #c0392b;
+            color: #ffffff;
+            animation: chatPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes chatPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.55); }
+            50% { box-shadow: 0 0 0 7px rgba(192, 57, 43, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #chatToggle.unread {
+                animation: none;
+            }
+        }
+        .chat-badge {
+            display: none;
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background-color: #c0392b;
+            color: #ffffff;
+            font-size: 11px;
+            line-height: 18px;
+            text-align: center;
+            border-radius: 9px;
+        }
+        #chatBox {
+            display: none;
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 360px;
+            height: 480px;
+            background: #181818;
+            border: 1px solid #3d3d3d;
+            border-radius: 12px;
+            z-index: 20001;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            flex-direction: column;
+        }
+        #chatHeader {
+            padding: 12px 14px;
+            background: #1c1c1c;
+            border-bottom: 1px solid #333333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+        }
+        #chatHeaderLeft {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #chatOnlineCount {
+            font-size: 11px;
+            font-weight: 500;
+            color: #6fbf73;
+            background: #1f2a1f;
+            border: 1px solid #2d3d2d;
+            border-radius: 10px;
+            padding: 2px 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #chatOnlineCount .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #6fbf73;
+            display: inline-block;
+        }
+        #chatOnlineCount.offline {
+            color: #888888;
+            background: #1e1e1e;
+            border-color: #333333;
+        }
+        #chatOnlineCount.offline .dot {
+            background: #666666;
+        }
+        #chatClose {
+            background: none;
+            border: none;
+            color: #888888;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 4px;
+        }
+        #chatClose:hover {
+            color: #ffffff;
+        }
+        #chatStatus {
+            font-size: 12px;
+            color: #888888;
+            font-weight: 400;
+        }
+        #chatMessages {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .chat-message {
+            position: relative;
+            background: #242424;
+            padding: 6px 8px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 11px;
+            line-height: 16px;
+        }
+        .chat-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 0;
+            margin-left: -4px;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background: none;
+            color: #eeeeee;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: underline dotted rgba(255, 255, 255, 0.35);
+            text-underline-offset: 3px;
+            transition: background-color 0.12s, text-decoration-color 0.12s;
+        }
+        .chat-name:hover {
+            background: rgba(255, 255, 255, 0.08);
+            text-decoration: underline solid currentColor;
+        }
+        .chat-name:focus-visible {
+            outline: 1px solid #777777;
+            outline-offset: 1px;
+        }
+        .mention {
+            color: #4ea1ff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .mention:hover {
+            text-decoration: underline;
+        }
+        .chat-message.mentions-me {
+            background: #1f2a3a;
+            box-shadow: inset 2px 0 0 #4ea1ff;
+        }
+        #mentionPicker,
+        #commandPicker,
+        #emojiPicker {
+            display: none;
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 100%;
+            margin-bottom: 4px;
+            background: #111111;
+            border: 1px solid #3d3d3d;
+            border-radius: 6px;
+            padding: 3px 0;
+            max-height: 170px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        #mentionPicker.open,
+        #commandPicker.open,
+        #emojiPicker.open {
+            display: block;
+        }
+        .mention-option {
+            padding: 5px 10px;
+            cursor: pointer;
+            color: #dddddd;
+        }
+        .mention-option.active,
+        .mention-option:hover {
+            background: #233247;
+            color: #ffffff;
+        }
+        .mention-option.creator {
+            color: #cc44cc;
+        }
+        .mention-empty {
+            padding: 5px 10px;
+            color: #777777;
+        }
+        #mentionToast {
+            display: none;
+            position: fixed;
+            right: 15px;
+            bottom: 92px;
+            width: 230px;
+            padding: 8px 10px;
+            background: #1b1b1b;
+            border: 1px solid #3d3d3d;
+            border-left: 3px solid #4ea1ff;
+            border-radius: 8px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+            z-index: 20000;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        #mentionToast.show {
+            display: block;
+        }
+        #mentionToastTitle {
+            color: #4ea1ff;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        #mentionToastText {
+            color: #bbbbbb;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .creator-badge {
+            display: inline-block;
+            color: #ffd700;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            border: 1px solid #a08000;
+            border-radius: 4px;
+            padding: 1px 5px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .chat-name.creator {
+            color: #cc44cc;
+        }
+        .role-badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            border: 1px solid currentColor;
+            border-radius: 4px;
+            padding: 1px 5px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .role-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 8px 0;
+            border-bottom: 1px solid #2c2c2c;
+        }
+        .role-item-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .role-item-perms {
+            margin-top: 2px;
+            color: #888888;
+            font-size: 11px;
+        }
+        .role-item-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .role-perm-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 2px 0;
+            color: #cccccc;
+            font-size: 12px;
+        }
+        .modal-shade {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 30000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, .72);
+        }
+        .modal-card {
+            width: 100%;
+            max-width: 380px;
+            padding: 20px;
+            background: #181818;
+            border: 1px solid #3d3d3d;
+            border-radius: 12px;
+            box-shadow: 0 12px 45px rgba(0, 0, 0, .55);
+        }
+        .modal-card h2 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+        .modal-card p {
+            margin: 7px 0;
+            color: #bdbdbd;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .profile-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 8px 0;
+            border-bottom: 1px solid #292929;
+            font-size: 13px;
+        }
+        .profile-line span:first-child {
+            color: #888888;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .profile-tabs {
+            display: none;
+            gap: 2px;
+            margin: 6px 0 12px;
+            border-bottom: 1px solid #292929;
+        }
+        .profile-tab {
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            padding: 7px 10px;
+            color: #888888;
+            font: inherit;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .profile-tab:hover {
+            color: #cccccc;
+        }
+        .profile-tab.active {
+            color: #ffffff;
+            border-bottom-color: #cc44cc;
+        }
+        .profile-pane {
+            display: none;
+        }
+        .profile-pane.active {
+            display: block;
+        }
+        .pane-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .perm-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #252525;
+        }
+        .perm-name {
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 12px;
+            color: #e0b84c;
+        }
+        .perm-desc {
+            margin-top: 3px;
+            font-size: 11px;
+            color: #888888;
+        }
+        .perm-btn {
+            min-width: 70px;
+        }
+        .perm-btn.granted {
+            background: #2a1414;
+            border-color: #6a2a2a;
+            color: #ff9999;
+        }
+        .perm-label {
+            display: block;
+            margin: 14px 0 6px;
+            color: #aaaaaa;
+            font-size: 11px;
+        }
+        .ban-row {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            font-size: 13px;
+        }
+        .ban-row label {
+            color: #aaaaaa;
+            font-size: 11px;
+        }
+        .ban-row select,
+        .ban-row input[type="text"],
+        .ban-row input[type="number"] {
+            background: #111111;
+            color: #ffffff;
+            border: 1px solid #444444;
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 12px;
+            width: 100%;
+            outline: none;
+        }
+        .ban-row select:focus,
+        .ban-row input[type="text"]:focus,
+        .ban-row input[type="number"]:focus {
+            border-color: #777;
+        }
+        .ban-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            color: #aaaaaa;
+            cursor: pointer;
+        }
+        #banBtn {
+            background: #5a1a1a;
+            border-color: #aa3333;
+            color: #ff9999;
+        }
+        #banBtn:hover {
+            background: #6e2020;
+            border-color: #cc4444;
+        }
+        #unbanBtn {
+            background: #1a3a1a;
+            border-color: #336633;
+            color: #88dd88;
+        }
+        #unbanBtn:hover {
+            background: #204a20;
+            border-color: #449944;
+        }
+        .profile-ban-status {
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+        .profile-ban-status.full-ban {
+            background: #2a1010;
+            color: #ff8888;
+            border: 1px solid #5a2020;
+        }
+        .profile-ban-status.chat-ban {
+            background: #2a2010;
+            color: #ffcc88;
+            border: 1px solid #5a4020;
+        }
+        #chatNameRow {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            border-bottom: 1px solid #333333;
+        }
+        #chatPrivacyRow {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 0 10px 10px;
+            color: #aaaaaa;
+            border-bottom: 1px solid #333333;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        #chatAccountRow {
+            display: flex;
+            gap: 12px;
+            padding: 0 10px 10px;
+            border-bottom: 1px solid #333333;
+            font-size: 11px;
+        }
+        #chatAccountRow button {
+            background: none;
+            border: none;
+            padding: 0;
+            color: #888888;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        #chatAccountRow button:hover {
+            color: #dddddd;
+        }
+        .account-field {
+            width: 100%;
+            margin: 4px 0 10px;
+            padding: 8px 10px;
+            background: #111111;
+            color: #ffffff;
+            border: 1px solid #444444;
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+        }
+        .account-field:focus {
+            border-color: #777777;
+        }
+        .account-label {
+            display: block;
+            margin-top: 6px;
+            color: #aaaaaa;
+            font-size: 12px;
+        }
+        .account-error {
+            min-height: 16px;
+            color: #ff8888;
+            font-size: 12px;
+        }
+        .account-error.ok {
+            color: #88dd88;
+        }
+        #chatPrivacy {
+            accent-color: #6fbf73;
+        }
+        #chatNameSetup {
+            display: none;
+            padding: 10px 10px 0;
+            color: #f0c66b;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        #chatNameInput {
+            flex: 1;
+            min-width: 0;
+            padding: 7px;
+            font-size: 12px;
+            background: #111111;
+            color: #ffffff;
+            border: 1px solid #444444;
+            border-radius: 6px;
+            outline: none;
+        }
+        #chatNameSave {
+            padding: 8px 12px;
+        }
+        #chatConnect {
+            margin: 10px;
+            display: none;
+        }
+        #chatInputRow {
+            position: relative;
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            border-top: 1px solid #333333;
+        }
+        #chatInput {
+            flex: 1;
+            min-width: 0;
+            padding: 8px;
+            font-size: 12px;
+            background: #111111;
+            color: #ffffff;
+            border: 1px solid #444444;
+            border-radius: 6px;
+            outline: none;
+        }
+        .chat-image {
+            display: block;
+            max-width: 70%;
+            max-height: 120px;
+            margin-top: 4px;
+            border-radius: 6px;
+            cursor: zoom-in;
+        }
+        .chat-message.deleted .chat-text {
+            color: #777777;
+            font-style: italic;
+        }
+        .msg-delete {
+            display: none;
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            padding: 1px 6px;
+            background: #3a1818;
+            color: #ff9999;
+            border: 1px solid #6a2a2a;
+            border-radius: 4px;
+            font: inherit;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .chat-message:hover .msg-delete {
+            display: block;
+        }
+        .logout-all {
+            background: #5a1a1a;
+            border-color: #aa3333;
+            color: #ff9999;
+        }
+        .logout-all:hover {
+            background: #6e2020;
+            border-color: #cc4444;
+        }
+        #approvalDetail {
+            margin: 10px 0;
+            padding: 8px 10px;
+            background: #111111;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            color: #dddddd;
+            font-size: 12px;
+            word-break: break-word;
+        }
+        #typingIndicator {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 12px;
+            color: #888888;
+            font-size: 11px;
+            min-height: 20px;
+        }
+        #typingIndicator.show {
+            display: flex;
+        }
+        .typing-dots {
+            display: inline-flex;
+            gap: 3px;
+        }
+        .typing-dots span {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #888888;
+            animation: typingBounce 1.2s ease-in-out infinite;
+        }
+        .typing-dots span:nth-child(2) {
+            animation-delay: .15s;
+        }
+        .typing-dots span:nth-child(3) {
+            animation-delay: .3s;
+        }
+        @keyframes typingBounce {
+            0%, 60%, 100% { transform: translateY(0); opacity: .45; }
+            30% { transform: translateY(-3px); opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .typing-dots span {
+                animation: none;
+            }
+        }
+        #commandHint {
+            display: none;
+            flex-direction: column;
+            gap: 3px;
+            padding: 8px 10px;
+            border-top: 1px solid #333333;
+            background: #141414;
+            font-size: 12px;
+        }
+        .hint-line {
+            color: #888888;
+            font-family: ui-monospace, Consolas, monospace;
+        }
+        .hint-name {
+            color: #e0b84c;
+        }
+        .hint-param.on {
+            color: #ffffff;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        .hint-note {
+            color: #777777;
+            font-size: 11px;
+        }
+        .cmd-wrap {
+            position: relative;
+        }
+        .cmd-wrap input {
+            width: 100%;
+        }
+        .cmd-suggest {
+            display: none;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            z-index: 5;
+            max-height: 140px;
+            overflow-y: auto;
+            background: #111111;
+            border: 1px solid #3d3d3d;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .cmd-suggest.open {
+            display: block;
+        }
+        #commandForm {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px;
+            border-top: 1px solid #333333;
+            background: #141414;
+        }
+        .cmd-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #e0b84c;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .cmd-head button {
+            background: none;
+            border: none;
+            color: #888888;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .cmd-desc {
+            color: #888888;
+            font-size: 11px;
+        }
+        .cmd-field {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            color: #aaaaaa;
+            font-size: 11px;
+        }
+        .cmd-field input,
+        .cmd-field select {
+            padding: 6px 8px;
+            background: #111111;
+            color: #ffffff;
+            border: 1px solid #444444;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+        }
+        .cmd-field input:focus,
+        .cmd-field select:focus {
+            border-color: #777777;
+        }
+        .cmd-error {
+            min-height: 14px;
+            color: #ff8888;
+            font-size: 11px;
+        }
+        .cmd-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        #imagePreview {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px 0;
+            border-top: 1px solid #333333;
+        }
+        #imagePreview img {
+            max-height: 56px;
+            max-width: 120px;
+            border-radius: 6px;
+        }
+        #imagePreview button {
+            background: none;
+            border: 1px solid #444444;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            color: #aaaaaa;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        #chatImageBtn {
+            padding: 8px 10px;
+        }
+        #imageViewModal {
+            cursor: zoom-out;
+        }
+        #imageViewImg {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        pre {
+            text-align: left;
+            background: #222222;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-width: 600px;
+            margin: 20px auto;
+            font-family: monospace;
+            color: #ffffff;
+        }
+        #customMinRow {
+            display: none;
+        }
+        #downloadBadge {
+            position: fixed;
+            top: 8px;
+            right: 15px;
+            z-index: 19999;
+            color: #bbbbbb;
+            font-size: 11px;
+            text-decoration: none;
+            font-family: inherit;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <a id="downloadBadge" href="http://notcaleb1.pythonanywhere.com/download" target="_blank">Get this site at notcaleb1.pythonanywhere.com/download</a>
+
+    <div id="mainAppLayout">
+        <div id="homeView" class="container">
+            <div class="top">
+                <h1 id="pageTitle">Caleb's Games</h1>
+                <div class="search-container">
+                    <input type="text" id="searchBar" class="search-bar" placeholder="Search games...">
+                    <div id="gameCount" class="game-count-label">0 games</div>
+                </div>
+                <div class="filters">
+                    <button id="newToggle" class="control-btn">Filter New Games</button>
+                    <button id="guiToggle" class="control-btn">Old GUI</button>
+                    <button id="shareBtn" class="control-btn">Share Site</button>
+                    <button id="accountBtn" class="control-btn">Log in</button>
+                </div>
+            </div>
+            <div class="menu" id="gameMenu"></div>
+        </div>
+
+        <div id="gameView" class="game-view-container">
+            <div class="control-bar">
+                <button id="backBtn" class="control-btn">Back to Menu</button>
+                <button id="fullscreenBtn" class="control-btn">Fullscreen</button>
+            </div>
+            <div class="iframe-wrapper">
+                <div id="loadingOverlay" class="loading-overlay"></div>
+                <iframe id="gameViewer" src=""></iframe>
+            </div>
+        </div>
+
+        <button id="devToggle" class="dev-toggle-btn">Debug</button>
+
+        <div id="debugPanel">
+            <div class="dbg-head">
+                <span class="dbg-title">debug</span>
+                <span class="dbg-spacer"></span>
+                <button id="dbgLoadLogs">load logs: off</button>
+                <button id="dbgCopy">copy</button>
+                <button id="dbgClear">clear</button>
+                <button id="dbgClose">x</button>
+            </div>
+            <div id="dbgList"></div>
+        </div>
+        <div class="version-info">Version: 2.4.0 Public</div>
+
+        <button id="chatToggle" class="control-btn">Chat<span id="chatBadge" class="chat-badge"></span></button>
+        <div id="mentionToast">
+            <div id="mentionToastTitle"></div>
+            <div id="mentionToastText"></div>
+        </div>
+
+        <div id="chatBox">
+            <div id="chatHeader">
+                <div id="chatHeaderLeft">
+                    <span>Chat</span>
+                    <span id="chatOnlineCount" class="offline" title="Players online"><span class="dot"></span><span id="chatOnlineCountText">-</span></span>
+                </div>
+                <span style="display:flex;align-items:center;gap:6px;">
+                    <button id="analyticsBtn" title="Open analytics" style="display:none;background:none;border:none;color:#7dff9a;font-size:12px;cursor:pointer;padding:2px 4px;font-family:inherit;">Stats</button>
+                    <button id="rolesBtn" title="Manage roles" style="display:none;background:none;border:none;color:#7eb8f7;font-size:12px;cursor:pointer;padding:2px 4px;font-family:inherit;">Roles</button>
+                    <button id="clearChatBtn" title="Clear chat" style="display:none;background:none;border:none;color:#aa4444;font-size:12px;cursor:pointer;padding:2px 4px;font-family:inherit;">Clear</button>
+                    <span id="chatStatus">Disconnected</span>
+                    <button id="chatClose" title="Close">x</button>
+                </span>
+            </div>
+            <div id="chatNameSetup">Pick a username before you can send messages.</div>
+            <div id="chatNameRow">
+                <input id="chatNameInput" type="text" maxlength="24" placeholder="Username">
+                <button id="chatNameSave" class="control-btn">Set</button>
+            </div>
+            <label id="chatPrivacyRow"><input id="chatPrivacy" type="checkbox"> Private profile</label>
+            <div id="chatAccountRow">
+                <button id="openRecoveryBtn">set a passcode</button>
+                <button id="openLoginBtn">log in</button>
+            </div>
+            <div id="chatMessages"></div>
+            <button id="chatConnect" class="control-btn">Reconnect</button>
+            <div id="typingIndicator"><span class="typing-dots"><span></span><span></span><span></span></span><span id="typingText"></span></div>
+            <div id="commandHint"></div>
+            <div id="commandForm"></div>
+            <div id="imagePreview"></div>
+            <div id="chatInputRow">
+                <div id="mentionPicker"></div>
+                <div id="commandPicker"></div>
+                <div id="emojiPicker"></div>
+                <input id="chatImageInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden>
+                <button id="chatImageBtn" class="control-btn" title="Send an image" disabled>+</button>
+                <input id="chatInput" type="text" placeholder="Type a message..." autocomplete="off" disabled>
+                <button id="chatSend" class="control-btn" disabled>Send</button>
+            </div>
+        </div>
+
+        <div id="profileModal" class="modal-shade">
+            <div class="modal-card">
+                <h2 id="profileName">Player</h2>
+
+                <div id="profileTabs" class="profile-tabs">
+                    <button class="profile-tab active" data-tab="info">Profile</button>
+                    <button class="profile-tab" data-tab="mod" id="tabModBtn">Moderation</button>
+                    <button class="profile-tab" data-tab="perms" id="tabPermsBtn">Roles</button>
+                </div>
+
+                <div id="paneInfo" class="profile-pane active" data-pane="info">
+                    <div id="profileBanStatus"></div>
+                    <div class="profile-line"><span>User ID</span><span id="profileId">-</span></div>
+                    <div class="profile-line"><span>Status</span><span id="profileStatus">-</span></div>
+                    <div class="profile-line"><span>Playing</span><span id="profileGame">-</span></div>
+                </div>
+
+                <div id="banSection" class="profile-pane" data-pane="mod">
+                    <div id="banFields" class="ban-row">
+                        <label>Duration</label>
+                        <select id="banDuration">
+                            <option value="0">Permanent</option>
+                            <option value="30">30 min</option>
+                            <option value="60">1 hour</option>
+                            <option value="1440">1 day</option>
+                            <option value="10080">1 week</option>
+                            <option value="custom">Custom...</option>
+                        </select>
+                        <div id="customMinRow" class="ban-row">
+                            <label>Length</label>
+                            <div style="display:flex;gap:7px;">
+                                <input id="banCustomMinutes" type="number" min="1" max="525600" placeholder="amount" style="flex:1;">
+                                <select id="banCustomUnit" style="width:90px;">
+                                    <option value="1">min</option>
+                                    <option value="60">hour</option>
+                                    <option value="1440">day</option>
+                                    <option value="10080">week</option>
+                                </select>
+                            </div>
+                        </div>
+                        <label>Reason (optional)</label>
+                        <input id="banReason" type="text" maxlength="200" placeholder="Reason...">
+                        <label class="ban-toggle-row">
+                            <input id="banChatOnly" type="checkbox"> Chat ban
+                        </label>
+                    </div>
+                    <div class="pane-actions">
+                        <button id="resetNameBtn" class="control-btn">Reset Name</button>
+                        <button id="unbanBtn" class="control-btn" style="display:none">Unban</button>
+                        <button id="banBtn" class="control-btn">Ban</button>
+                    </div>
+                </div>
+
+                <div id="staffSection" class="profile-pane" data-pane="perms">
+                    <div class="ban-row" style="margin-bottom:10px;">
+                        <label class="perm-label" style="margin-top:0;">Role</label>
+                        <div style="display:flex;gap:7px;">
+                            <select id="roleAssignSelect" style="flex:1;"></select>
+                            <button id="roleAssignBtn" class="control-btn" style="white-space:nowrap;">Set Role</button>
+                        </div>
+                    </div>
+                    <div class="pane-actions" style="justify-content:flex-start;margin:0 0 6px;">
+                        <button id="openRolesFromProfile" class="control-btn">Add or edit roles</button>
+                    </div>
+                    <div class="ban-row">
+                        <label class="perm-label">Name</label>
+                        <div style="display:flex;gap:7px;">
+                            <input id="adminSetNameInput" type="text" maxlength="24" placeholder="New name..." style="flex:1;">
+                            <button id="adminSetNameBtn" class="control-btn" style="white-space:nowrap;">Set</button>
+                        </div>
+                        <label class="perm-label">Name color</label>
+                        <div style="display:flex;gap:7px;">
+                            <input id="adminColorInput" type="color" value="#ffffff" style="width:44px;padding:2px;height:32px;background:#111;border:1px solid #444;border-radius:6px;">
+                            <button id="adminColorBtn" class="control-btn" style="white-space:nowrap;">Set Color</button>
+                            <button id="adminColorClearBtn" class="control-btn" style="white-space:nowrap;">Clear</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button id="viewScreenBtn" class="control-btn" style="display:none">Ask Screenshare</button>
+                    <button id="profileClose" class="control-btn">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="rolesModal" class="modal-shade">
+            <div class="modal-card" style="max-height:90vh;overflow-y:auto;">
+                <h2>Roles</h2>
+                <div id="rolesList"></div>
+                <div class="ban-row" style="margin-top:12px;">
+                    <label id="roleEditorTitle">New role</label>
+                    <input id="roleNameInput" type="text" maxlength="20" placeholder="Role name" autocomplete="off">
+                    <label>Color</label>
+                    <input id="roleColorInput" type="color" value="#4cc2e0" style="width:44px;height:32px;padding:2px;background:#111;border:1px solid #444;border-radius:6px;">
+                    <label class="ban-toggle-row">
+                        <input id="roleShowInput" type="checkbox" checked> Show on profile and in chat
+                    </label>
+                    <label class="ban-toggle-row">
+                        <input id="roleAuthInput" type="checkbox"> Auth required (you approve every action)
+                    </label>
+                    <label>This role can</label>
+                    <div id="rolePermChecks"></div>
+                    <div id="roleError" class="cmd-error"></div>
+                </div>
+                <div class="modal-actions">
+                    <button id="roleSaveBtn" class="control-btn">Save role</button>
+                    <button id="roleNewBtn" class="control-btn">New</button>
+                    <button id="rolesClose" class="control-btn">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screenshareAskModal" class="modal-shade">
+            <div class="modal-card" style="max-width:340px">
+                <h2>Screen share</h2>
+                <p id="screenshareAskText" style="color:#ccc;font-size:13px;">Screenshare request received</p>
+                <p style="color:#888;font-size:12px;">They will be able to see this tab until you or they disconnect, this is a new feature and may be buggy</p>
+                <div class="modal-actions">
+                    <button id="screenshareDeny" class="control-btn">Decline</button>
+                    <button id="screenshareAllow" class="control-btn">Accept</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screenshareViewModal" class="modal-shade" style="padding:0;background:#000;align-items:stretch;justify-content:stretch;">
+            <div style="width:100%;height:100%;display:flex;flex-direction:column;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;background:#141414;border-bottom:1px solid #2a2a2a;">
+                    <div>
+                        <div id="screenshareViewTitle" style="font-size:14px;font-weight:600;">Screen share</div>
+                        <div id="screenshareViewStatus" style="color:#888;font-size:11px;">Asking them now...</div>
+                    </div>
+                    <button id="screenshareViewClose" class="control-btn">Disconnect</button>
+                </div>
+                <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#000;">
+                    <img id="screenshareImg" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;">
+                </div>
+            </div>
+        </div>
+
+        <div id="shareModal" class="modal-shade">
+            <div class="modal-card" style="max-width:420px">
+                <h2>Share this site</h2>
+                <p>This site works as a downloaded file, not a normal website. To share it, give people the download link below and they can save it to their computer.</p>
+                <p style="color:#aaaaaa;font-size:12px;">Since it runs as a local file, it can't be blocked like a regular site.</p>
+                <div style="display:flex;gap:8px;align-items:center;margin:14px 0 4px;">
+                    <input id="shareLinkInput" type="text" value="notcaleb1.pythonanywhere.com/download" readonly style="flex:1;background:#111;color:#ddd;border:1px solid #444;border-radius:8px;padding:8px 10px;font-size:12px;outline:none;">
+                    <button id="shareCopyBtn" class="control-btn" style="white-space:nowrap">Copy</button>
+                </div>
+                <div class="modal-actions">
+                    <button id="shareClose" class="control-btn">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loginModal" class="modal-shade">
+            <div class="modal-card" style="max-width:340px">
+                <h2>Log in</h2>
+                <p>This isn't required. If you saved a passcode before, log in to get your name and favorites back.</p>
+                <label class="account-label" for="loginName">Name or user ID</label>
+                <input id="loginName" class="account-field" type="text" maxlength="24" autocomplete="username">
+                <label class="account-label" for="loginPass">Passcode</label>
+                <input id="loginPass" class="account-field" type="password" maxlength="64" autocomplete="current-password">
+                <div id="loginError" class="account-error"></div>
+                <div class="modal-actions">
+                    <button id="loginNewBtn" class="control-btn">Not now</button>
+                    <button id="loginCreateBtn" class="control-btn">Create account</button>
+                    <button id="loginSubmitBtn" class="control-btn">Log in</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="recoveryModal" class="modal-shade">
+            <div class="modal-card" style="max-width:340px">
+                <h2>Save your account</h2>
+                <p>Pick a name and a passcode you'll remember. If you ever get logged out you can use them to get your stuff back.</p>
+                <div id="recoveryCurrentRow" style="display:none">
+                    <label class="account-label" for="recoveryCurrent">Current passcode</label>
+                    <input id="recoveryCurrent" class="account-field" type="password" maxlength="64" autocomplete="current-password">
+                </div>
+                <label class="account-label" for="recoveryName">Name</label>
+                <input id="recoveryName" class="account-field" type="text" maxlength="24" autocomplete="username">
+                <label class="account-label" for="recoveryPass">Passcode</label>
+                <input id="recoveryPass" class="account-field" type="password" maxlength="64" autocomplete="new-password" placeholder="at least 6 characters">
+                <div id="recoveryError" class="account-error"></div>
+                <div class="modal-actions">
+                    <button id="logoutAllRecoveryBtn" class="control-btn logout-all" style="display:none">Log out all devices</button>
+                    <button id="recoveryLaterBtn" class="control-btn">Later</button>
+                    <button id="recoverySaveBtn" class="control-btn">Save</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="imageViewModal" class="modal-shade" style="padding:0;background:rgba(0,0,0,.9);">
+            <img id="imageViewImg" alt="">
+        </div>
+
+        <div id="approvalModal" class="modal-shade">
+            <div class="modal-card" style="max-width:360px">
+                <h2>Approval needed</h2>
+                <p id="approvalWho"></p>
+                <div id="approvalDetail"></div>
+                <div class="modal-actions">
+                    <button id="approvalDeny" class="control-btn">Deny</button>
+                    <button id="approvalAccept" class="control-btn">Accept</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="updateModal" class="modal-shade">
+            <div class="modal-card" style="max-width:340px">
+                <h2>Update available</h2>
+                <p>A new version of the site is ready. Refresh to get it. If you're in a game, you'll be sent back to it.</p>
+                <div class="modal-actions">
+                    <button id="updateLaterBtn" class="control-btn">Not now</button>
+                    <button id="updateNowBtn" class="control-btn">Refresh</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="playersModal" class="modal-shade">
+            <div class="modal-card" style="max-width:400px">
+                <h2>Who's online</h2>
+                <div id="playersModalList" style="max-height:320px;overflow-y:auto;margin:10px 0;"></div>
+                <div class="modal-actions">
+                    <button id="playersModalClose" class="control-btn">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API = 'https://notcaleb1.pythonanywhere.com';
+    const CHAT_WS = 'wss://chatapi-qn5l.onrender.com/chat';
+    const CHAT_HTTP = 'https://chatapi-qn5l.onrender.com';
+    // games hosted somewhere other than the normal games site: name -> full address
+    const EXTRA_GAMES = { 'drifters': 'https://networkingserver.onrender.com/' };
+    const debugEntries = [];
+    const DEBUG_MAX = 500;
+    const debugKinds = { to: 'TO server', from: 'FROM server', info: 'info', warn: 'warn', error: 'error' };
+    const debugHidden = ['game_update', 'user_count', 'screenshare_frame', 'mention_list'];
+    let pageBlocked = false;
+
+    function debugTime(date) {
+        return date.toTimeString().slice(0, 8);
+    }
+
+    function debugText(value) {
+        if (typeof value === 'string') return value;
+        if (value instanceof Error) return value.message;
+        try {
+            return JSON.stringify(value);
+        } catch {
+            return String(value);
+        }
+    }
+
+    function stripImages(data) {
+        if (!data || typeof data !== 'object') return data;
+        const copy = { ...data };
+        if (typeof copy.image === 'string') copy.image = '[image]';
+        if (Array.isArray(copy.messages)) {
+            copy.messages = copy.messages.map(m => (m && m.image ? { ...m, image: '[image]' } : m));
+        }
+        return copy;
+    }
+
+    function debugLine(entry) {
+        return `${debugTime(entry.time)} ${debugKinds[entry.kind]} ${entry.text}` + (entry.data ? ' ' + JSON.stringify(entry.data) : '');
+    }
+
+    function debugRow(entry) {
+        const row = document.createElement('div');
+        row.className = 'dbg-row dbg-' + entry.kind;
+        const time = document.createElement('span');
+        time.className = 'dbg-time';
+        time.textContent = debugTime(entry.time);
+        const kind = document.createElement('span');
+        kind.className = 'dbg-kind';
+        kind.textContent = debugKinds[entry.kind];
+        const text = document.createElement('span');
+        text.className = 'dbg-text';
+        text.textContent = entry.text;
+        row.append(time, kind, text);
+        if (entry.data) {
+            row.classList.add('dbg-json');
+            row.addEventListener('click', () => {
+                const open = row.querySelector('pre');
+                if (open) return open.remove();
+                const pre = document.createElement('pre');
+                pre.textContent = JSON.stringify(entry.data, null, 2);
+                row.appendChild(pre);
+            });
+        }
+        return row;
+    }
+
+    function debugPush(kind, text, data) {
+        const entry = { time: new Date(), kind, text, data };
+        debugEntries.push(entry);
+        if (debugEntries.length > DEBUG_MAX) debugEntries.shift();
+        const panel = document.getElementById('debugPanel');
+        if (!panel || !panel.classList.contains('open')) return;
+        const list = document.getElementById('dbgList');
+        const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+        list.appendChild(debugRow(entry));
+        if (list.childElementCount > DEBUG_MAX) list.firstElementChild.remove();
+        if (atBottom) list.scrollTop = list.scrollHeight;
+    }
+
+    function debugRenderAll() {
+        const list = document.getElementById('dbgList');
+        list.textContent = '';
+        debugEntries.forEach(entry => list.appendChild(debugRow(entry)));
+        list.scrollTop = list.scrollHeight;
+    }
+
+    ['log', 'info', 'warn', 'error'].forEach(level => {
+        const original = console[level].bind(console);
+        console[level] = (...args) => {
+            original(...args);
+            debugPush(level === 'log' ? 'info' : level, args.map(debugText).join(' '));
+        };
+    });
+
+    window.addEventListener('error', event => {
+        debugPush('error', event.message);
+    });
+
+    window.addEventListener('unhandledrejection', event => {
+        debugPush('error', debugText(event.reason));
+    });
+
+    let games = [];
+    let newGames = [];
+    let popularGames = [];
+    let DevMode = false;
+    let currentSearchQuery = "";
+    let showNewOnly = false;
+    let classic = localStorage.getItem('classic_gui') === '1';
+
+    const menu = document.getElementById('gameMenu');
+    const homeView = document.getElementById('homeView');
+    const gameView = document.getElementById('gameView');
+    const viewer = document.getElementById('gameViewer');
+    const backBtn = document.getElementById('backBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const devToggle = document.getElementById('devToggle');
+    const gameCountEl = document.getElementById('gameCount');
+    const searchBar = document.getElementById('searchBar');
+    const newToggle = document.getElementById('newToggle');
+    const guiToggle = document.getElementById('guiToggle');
+    const pageTitle = document.getElementById('pageTitle');
+
+    async function sha256(message) {
+        const buffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function parseList(text) {
+        return text.split(',').map(item => item.replace(/[\[\]'";\s]/g, '')).filter(Boolean);
+    }
+
+    let blockState = null;
+
+    function showForbidden(info, meta = {}) {
+        if (pageBlocked) return;
+        blockState = { info, meta, checked: false };
+        pageBlocked = true;
+        if (info.error === 'Banned') debugPush('error', 'blocked, this account is banned');
+        else if (meta.error) debugPush('error', "blocked, couldn't reach the site server: " + meta.error);
+        else debugPush('error', 'blocked by ' + (meta.via || 'the server') + ', status ' + (meta.status || info.status));
+        if (chatRetryTimer) {
+            clearTimeout(chatRetryTimer);
+            chatRetryTimer = null;
+        }
+        if (chatSocket) chatSocket.close();
+        stopScreenshareCapture();
+
+        const debugCss = Array.from(document.styleSheets)
+            .flatMap(sheet => {
+                try {
+                    return Array.from(sheet.cssRules);
+                } catch {
+                    return [];
+                }
+            })
+            .map(rule => rule.cssText)
+            .filter(text => text.includes('dbg') || text.includes('#debugPanel'))
+            .join('\n');
+        const panel = document.getElementById('debugPanel');
+        panel.classList.remove('open');
+        panel.querySelector('#dbgLoadLogs').remove();
+        const panelHtml = panel.outerHTML;
+
+        document.open();
+        document.write('<pre id="blockJson"></pre><style>' + debugCss + '</style>' + panelHtml);
+        document.close();
+        document.getElementById('blockJson').textContent = JSON.stringify(info, null, 2);
+        wireDebugPanel();
+        document.addEventListener('keydown', onBlockedKey);
+        window.stop();
+    }
+
+    function onBlockedKey(event) {
+        if (!(event.ctrlKey && event.shiftKey && event.altKey && event.code === 'KeyD')) return;
+        event.preventDefault();
+        const panel = document.getElementById('debugPanel');
+        const open = panel.classList.toggle('open');
+        if (!open) return;
+        debugRenderAll();
+        if (!blockState.checked) {
+            blockState.checked = true;
+            checkBlockedIp();
+        }
+    }
+
+    async function fetchWhoami(base) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 10000);
+        try {
+            const res = await fetch(base + '/whoami', { cache: 'no-store', signal: controller.signal });
+            return res.ok ? await res.json() : null;
+        } catch {
+            return null;
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    async function checkBlockedIp() {
+        debugPush('info', 'checking what ip each server sees');
+        const [site, chat] = await Promise.all([fetchWhoami(API), fetchWhoami(CHAT_HTTP)]);
+        [['site', site], ['chat', chat]].forEach(([name, data]) => {
+            if (!data) debugPush('warn', `${name} server didn't answer`);
+            else debugPush(data.allowed ? 'info' : 'warn', `${name} server sees ${data.ip}, ${data.allowed ? 'allowed' : 'not allowed'}`, data);
+        });
+        if ((site && site.version === 6) || (chat && chat.version === 6)) {
+            debugPush('warn', 'connecting over ipv6, add that range to the allow list');
+        }
+        if (site && chat && site.allowed !== chat.allowed) {
+            debugPush('warn', 'the two servers see different addresses for this device');
+        }
+    }
+
+    async function loadGames() {
+        try {
+            const res = await fetch(API + '/games.txt', { cache: 'no-store' });
+            games = parseList(await res.text());
+        } catch (e) {
+            games = [];
+        }
+        try {
+            const res = await fetch(API + '/newgames.txt', { cache: 'no-store' });
+            newGames = parseList(await res.text());
+        } catch (e) {
+            newGames = [];
+        }
+        if (games.length) debugPush('info', `loaded ${games.length} games, ${newGames.length} new`);
+        else debugPush('error', "couldn't load the games list");
+        Object.keys(EXTRA_GAMES).forEach(g => {
+            if (!games.includes(g)) games.unshift(g);
+            if (!newGames.includes(g)) newGames.unshift(g);
+        });
+        buildMenu();
+        resumeGame();
+        loadPopular();
+    }
+
+    function resumeGame() {
+        let game = null;
+        try {
+            game = sessionStorage.getItem('CG_ResumeGame');
+            sessionStorage.removeItem('CG_ResumeGame');
+        } catch {}
+        if (game && games.includes(game)) openGame(game);
+    }
+
+    function applyMode() {
+        document.body.classList.toggle('classic', classic);
+        guiToggle.textContent = classic ? 'New GUI' : 'Old GUI';
+        guiToggle.classList.toggle('on', classic);
+        newToggle.classList.toggle('on', showNewOnly);
+        pageTitle.textContent = classic ? 'Pick a Game' : "Caleb's Games";
+    }
+
+    function cleanName(file) {
+        return file.replace('.html', '').replace(/[-_]/g, ' ');
+    }
+
+    function isNew(file) {
+        return newGames.includes(file);
+    }
+
+    devToggle.addEventListener('click', () => {
+        const panel = document.getElementById('debugPanel');
+        const open = !panel.classList.contains('open');
+        panel.classList.toggle('open', open);
+        devToggle.classList.toggle('enabled', open);
+        if (open) debugRenderAll();
+    });
+
+    function wireDebugPanel() {
+        document.getElementById('dbgClose').addEventListener('click', () => {
+            document.getElementById('debugPanel').classList.remove('open');
+            devToggle.classList.remove('enabled');
+        });
+
+        document.getElementById('dbgClear').addEventListener('click', () => {
+            debugEntries.length = 0;
+            debugRenderAll();
+        });
+
+        document.getElementById('dbgCopy').addEventListener('click', () => {
+            const btn = document.getElementById('dbgCopy');
+            navigator.clipboard.writeText(debugEntries.map(debugLine).join('\n')).then(() => {
+                btn.textContent = 'copied';
+                setTimeout(() => { btn.textContent = 'copy'; }, 1200);
+            }).catch(() => {});
+        });
+
+        const loadLogs = document.getElementById('dbgLoadLogs');
+        if (!loadLogs) return;
+        loadLogs.addEventListener('click', () => {
+            DevMode = !DevMode;
+            loadLogs.textContent = 'load logs: ' + (DevMode ? 'on' : 'off');
+        });
+    }
+
+    wireDebugPanel();
+
+    searchBar.addEventListener('input', e => {
+        currentSearchQuery = e.target.value.toLowerCase();
+        buildMenu();
+    });
+
+    newToggle.addEventListener('click', () => {
+        showNewOnly = !showNewOnly;
+        applyMode();
+        buildMenu();
+    });
+
+    guiToggle.addEventListener('click', () => {
+        classic = !classic;
+        localStorage.setItem('classic_gui', classic ? '1' : '0');
+        applyMode();
+        buildMenu();
+    });
+
+    function LogOnGUI(message, type = 'log') {
+        if (type === 'warn' || type === 'error') debugPush(type, 'game: ' + message);
+        if (!DevMode) return;
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        entry.textContent = message;
+        loadingOverlay.appendChild(entry);
+        loadingOverlay.scrollTop = loadingOverlay.scrollHeight;
+    }
+
+    window.addEventListener('message', event => {
+        if (event.data && event.data.type === 'GAME_LOG') {
+            LogOnGUI(event.data.msg, event.data.level);
+        }
+    });
+
+    function getFavorites() {
+        try {
+            return JSON.parse(localStorage.getItem('favorites') || '[]');
+        } catch {
+            return [];
+        }
+    }
+
+    function saveFavorites(favs) {
+        localStorage.setItem('favorites', JSON.stringify(favs));
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'set_favorites', favorites: favs }));
+        }
+    }
+
+    function isFavorite(file) {
+        return getFavorites().includes(file);
+    }
+
+    function toggleFavorite(file) {
+        const favs = getFavorites();
+        const idx = favs.indexOf(file);
+        if (idx === -1) favs.push(file);
+        else favs.splice(idx, 1);
+        saveFavorites(favs);
+    }
+
+    function buildMenu() {
+        menu.innerHTML = '';
+        const pool = showNewOnly ? newGames : games;
+        const matches = file => cleanName(file).toLowerCase().includes(currentSearchQuery);
+        const list = pool.filter(matches);
+        const favs = getFavorites().filter(file => pool.includes(file) && matches(file));
+
+        if (classic) {
+            gameCountEl.textContent = `Loaded: ${list.length} Games`;
+        } else {
+            gameCountEl.textContent = `${list.length} ${showNewOnly ? 'new ' : ''}games`;
+        }
+
+        const popular = popularGames.filter(file => pool.includes(file) && matches(file));
+
+        if (favs.length > 0) {
+            const label = document.createElement('div');
+            label.className = 'fav-section-label';
+            label.textContent = 'Favorites';
+            menu.appendChild(label);
+            favs.forEach(file => createGameItem(file));
+            const divider = document.createElement('hr');
+            divider.className = 'fav-divider';
+            menu.appendChild(divider);
+        }
+
+        if (popular.length > 0) {
+            const label = document.createElement('div');
+            label.className = 'fav-section-label';
+            label.textContent = 'Popular';
+            menu.appendChild(label);
+            popular.forEach(file => createGameItem(file));
+            const divider = document.createElement('hr');
+            divider.className = 'fav-divider';
+            menu.appendChild(divider);
+        }
+
+        if (list.length === 0) {
+            const note = document.createElement('div');
+            note.className = 'empty-note';
+            note.textContent = `No games found`;
+            menu.appendChild(note);
+            return;
+        }
+
+        list.forEach(file => createGameItem(file));
+    }
+
+    async function loadPopular() {
+        try {
+            const res = await fetch(CHAT_HTTP + '/popular', { cache: 'no-store' });
+            if (!res.ok) return;
+            const data = await res.json();
+            const next = Array.isArray(data.games) ? data.games.filter(g => typeof g === 'string') : [];
+            if (next.join('|') === popularGames.join('|')) return;
+            popularGames = next;
+            buildMenu();
+        } catch {}
+    }
+
+    setInterval(loadPopular, 300000);
+
+    function createGameItem(file) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'game-item';
+
+        const favBtnEl = document.createElement('button');
+        favBtnEl.className = 'fav-btn' + (isFavorite(file) ? ' active' : '');
+        favBtnEl.title = isFavorite(file) ? 'Remove from favorites' : 'Add to favorites';
+        favBtnEl.textContent = '★';
+        favBtnEl.addEventListener('click', e => {
+            e.stopPropagation();
+            toggleFavorite(file);
+            buildMenu();
+        });
+
+        const button = document.createElement('button');
+        button.className = 'btn' + (isFavorite(file) ? ' favorited' : '');
+        button.textContent = cleanName(file);
+        button.addEventListener('click', () => openGame(file));
+
+        wrapper.appendChild(button);
+        wrapper.appendChild(favBtnEl);
+
+        if (isNew(file) && !showNewOnly) {
+            const tag = document.createElement('span');
+            tag.className = 'new-tag';
+            tag.textContent = 'NEW';
+            wrapper.appendChild(tag);
+        }
+
+        menu.appendChild(wrapper);
+    }
+
+    async function openGame(file) {
+        if (!games.includes(file)) {
+            console.warn('not a game on the list: ' + file);
+            return;
+        }
+        sendGameUpdate(file);
+        debugPush('info', 'opening ' + cleanName(file));
+        loadingOverlay.innerHTML = '';
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.style.opacity = '1';
+        loadingOverlay.style.display = 'flex';
+        devToggle.style.display = 'none';
+        if (!DevMode) {
+            loadingOverlay.textContent = 'Loading game...';
+        } else {
+            loadingOverlay.classList.add('log-mode');
+            LogOnGUI(`Requesting: ${file.replace('.html', '')}`, 'info');
+        }
+        homeView.style.display = 'none';
+        gameView.style.display = 'flex';
+
+        if (EXTRA_GAMES[file]) {
+            viewer.src = EXTRA_GAMES[file];
+            return;
+        }
+
+        let baseUrl = '';
+        try {
+            const res = await fetch(API + '/sourceweb.txt');
+            baseUrl = (await res.text()).trim();
+        } catch (e) {
+            debugPush('error', "couldn't get where the games are hosted: " + e.message);
+        }
+        if (baseUrl && !baseUrl.endsWith('/')) baseUrl += '/';
+        viewer.src = `${baseUrl}${file}`;
+    }
+
+    (async function start() {
+        debugPush('info', 'checking access');
+        try {
+            const token = localStorage.getItem('CG_Token') || '';
+            const headers = token ? { 'x-player-key': token } : {};
+            const res = await fetch(API + '/access', { cache: 'no-store', headers });
+            const data = await res.json();
+            if (!res.ok || !data.allowed) {
+                showForbidden(data, { via: 'access check', url: API + '/access', status: res.status });
+                return;
+            }
+
+            debugPush('info', 'access ok');
+            document.getElementById('mainAppLayout').style.display = 'block';
+            applyMode();
+            buildMenu();
+            loadGames();
+        } catch (e) {
+            showForbidden(
+                { status: 503, error: "Unavailable", message: "Could not connect to the server. Make sure you're on the right network.", exception_error: e.message || String(e) },
+                { via: 'access check', url: API + '/access', error: e.message || String(e) }
+            );
+        }
+    })();
+
+
+    const chatBox = document.getElementById('chatBox');
+    const chatToggle = document.getElementById('chatToggle');
+    const chatBadge = document.getElementById('chatBadge');
+    const chatClose = document.getElementById('chatClose');
+    const chatConnect = document.getElementById('chatConnect');
+    const chatStatus = document.getElementById('chatStatus');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const mentionPicker = document.getElementById('mentionPicker');
+    const chatSend = document.getElementById('chatSend');
+    const chatImageBtn = document.getElementById('chatImageBtn');
+    const chatImageInput = document.getElementById('chatImageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const commandPicker = document.getElementById('commandPicker');
+    const chatNameInput = document.getElementById('chatNameInput');
+    const chatNameSave = document.getElementById('chatNameSave');
+    const chatNameRow = document.getElementById('chatNameRow');
+    const chatNameSetup = document.getElementById('chatNameSetup');
+    const chatPrivacy = document.getElementById('chatPrivacy');
+    const chatOnlineCount = document.getElementById('chatOnlineCount');
+    const chatOnlineCountText = document.getElementById('chatOnlineCountText');
+    const profileModal = document.getElementById('profileModal');
+    const profileName = document.getElementById('profileName');
+    const profileId = document.getElementById('profileId');
+    const profileStatus = document.getElementById('profileStatus');
+    const profileGame = document.getElementById('profileGame');
+
+    let chatSocket = null;
+    let chatUserId = null;
+    let playerKey = null;
+    let chatRetryTimer = null;
+    let chatConnecting = false;
+    let chatUnread = 0;
+    let currentGame = null;
+    let isCreator = false;
+    let hasPasscode = false;
+    let newPlayerChosen = false;
+    let saveAfterWelcome = false;
+    let askedForPasscode = false;
+    let loginFromStart = false;
+    let myPerms = new Set();
+    let permLabels = {};
+    let rolesList = [];
+    let editingRoleId = null;
+    let pendingRoleSave = false;
+    let myScreensharePerm = false;
+    let profileViewId = null;
+    let isBanned = false;
+    let staffCommands = [];
+    let pendingImage = null;
+    let commandMatches = [];
+    let commandIndex = 0;
+
+    function isStaff() {
+        return isCreator || myPerms.size > 0;
+    }
+
+    function can(perm) {
+        return isCreator || myPerms.has(perm);
+    }
+
+    let chatName = localStorage.getItem('CG_Name') || '';
+    chatUserId = localStorage.getItem('CG_UserId') ? Number(localStorage.getItem('CG_UserId')) : null;
+    chatNameInput.value = chatName;
+
+    function hasSavedKey() {
+        return /^[a-f0-9]{64}$/.test(localStorage.getItem('CG_Token') || '');
+    }
+
+    function updateAccountRow() {
+        document.getElementById('openRecoveryBtn').textContent = hasPasscode ? 'change passcode' : 'set a passcode';
+        document.getElementById('openLoginBtn').style.display = hasPasscode ? 'none' : '';
+        document.getElementById('accountBtn').textContent = hasPasscode ? 'Switch account' : 'Log in';
+    }
+
+    function formatChatTime(value) {
+        const date = new Date(value);
+        if (isNaN(date)) return '';
+        const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        const day = `${date.getMonth() + 1}/${date.getDate()}`;
+        const year = date.getFullYear() < new Date().getFullYear() ? '/' + date.getFullYear() : '';
+        return `${day}${year} ${time}`;
+    }
+
+    function maybeAskForPasscode() {
+        if (hasPasscode || askedForPasscode || localStorage.getItem('CG_PasscodeLater')) return;
+        if (document.getElementById('loginModal').style.display === 'flex') return;
+        if (document.getElementById('recoveryModal').style.display === 'flex') return;
+        askedForPasscode = true;
+        debugPush('info', 'no passcode saved on this account yet, asking');
+        openRecovery();
+    }
+
+    function openRecovery() {
+        const name = document.getElementById('recoveryName');
+        name.value = chatName || '';
+        document.getElementById('recoveryPass').value = '';
+        document.getElementById('recoveryCurrent').value = '';
+        document.getElementById('recoveryCurrentRow').style.display = hasPasscode ? 'block' : 'none';
+        document.getElementById('logoutAllRecoveryBtn').style.display = hasPasscode ? '' : 'none';
+        const error = document.getElementById('recoveryError');
+        error.textContent = '';
+        error.classList.remove('ok');
+        document.getElementById('recoverySaveBtn').disabled = false;
+        document.getElementById('recoveryModal').style.display = 'flex';
+        (name.value ? document.getElementById('recoveryPass') : name).focus();
+    }
+
+    function saveRecovery() {
+        const name = document.getElementById('recoveryName').value.trim();
+        const pass = document.getElementById('recoveryPass').value;
+        const error = document.getElementById('recoveryError');
+        error.classList.remove('ok');
+        if (!name) return error.textContent = 'Pick a name.';
+        if (pass.length < 6) return error.textContent = 'Passcode needs at least 6 characters.';
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return error.textContent = 'Not connected yet, try again in a second.';
+        error.textContent = '';
+        document.getElementById('recoverySaveBtn').disabled = true;
+        const current = document.getElementById('recoveryCurrent').value;
+        if (hasPasscode && !current) {
+            document.getElementById('recoverySaveBtn').disabled = false;
+            return error.textContent = 'Enter your current passcode.';
+        }
+        chatSocket.send(JSON.stringify({ type: 'set_recovery', username: name, passcode: pass, current_passcode: hasPasscode ? current : undefined }));
+    }
+
+    function openLogin(fromStart) {
+        loginFromStart = fromStart;
+        document.getElementById('loginName').value = localStorage.getItem('CG_Name') || '';
+        document.getElementById('loginPass').value = '';
+        document.getElementById('loginError').textContent = '';
+        document.getElementById('loginSubmitBtn').disabled = false;
+        document.getElementById('loginSubmitBtn').textContent = 'Log in';
+        document.getElementById('loginModal').style.display = 'flex';
+        document.getElementById('loginName').focus();
+    }
+
+    async function submitLogin() {
+        const username = document.getElementById('loginName').value.trim();
+        const passcode = document.getElementById('loginPass').value;
+        const error = document.getElementById('loginError');
+        const button = document.getElementById('loginSubmitBtn');
+        if (!username || !passcode) return error.textContent = 'Enter your name and passcode.';
+        error.textContent = '';
+        button.disabled = true;
+        button.textContent = 'Logging in...';
+        debugPush('info', 'logging in as ' + username);
+        try {
+            const res = await fetch(CHAT_HTTP + '/account/recover', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, passcode }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                debugPush('warn', 'login failed, status ' + res.status);
+                error.textContent = data.detail || "Couldn't log in.";
+                return;
+            }
+            localStorage.setItem('CG_Token', data.player_key);
+            localStorage.setItem('CG_UserId', String(data.user_id));
+            localStorage.setItem('CG_Name', data.username || '');
+            playerKey = data.player_key;
+            chatName = data.username || '';
+            chatNameInput.value = chatName;
+            debugPush('info', 'login worked, reconnecting');
+            document.getElementById('loginModal').style.display = 'none';
+            if (chatSocket) {
+                const old = chatSocket;
+                chatSocket = null;
+                old.onclose = null;
+                old.close();
+            }
+            chatConnecting = false;
+            connectChat();
+        } catch (e) {
+            debugPush('error', "login request didn't go through: " + e.message);
+            error.textContent = "Couldn't reach the server. Try again in a bit.";
+        } finally {
+            button.disabled = false;
+            button.textContent = 'Log in';
+        }
+    }
+
+    function skipLogin() {
+        document.getElementById('loginModal').style.display = 'none';
+        if (!loginFromStart) return;
+        newPlayerChosen = true;
+        debugPush('info', 'starting as a new player');
+        connectChat();
+    }
+
+    function createAccount() {
+        document.getElementById('loginModal').style.display = 'none';
+        const connected = chatSocket && chatSocket.readyState === WebSocket.OPEN;
+        if (connected && !hasPasscode) {
+            openRecovery();
+            return;
+        }
+        saveAfterWelcome = true;
+        newPlayerChosen = true;
+        if (!connected && !hasSavedKey()) {
+            debugPush('info', 'creating a new account');
+            connectChat();
+            return;
+        }
+        debugPush('info', 'switching to a new account');
+        localStorage.removeItem('CG_Token');
+        localStorage.removeItem('CG_UserId');
+        localStorage.removeItem('CG_Name');
+        playerKey = null;
+        chatName = '';
+        chatNameInput.value = '';
+        if (chatSocket) {
+            const old = chatSocket;
+            chatSocket = null;
+            old.onclose = null;
+            old.close();
+        }
+        chatConnecting = false;
+        connectChat();
+    }
+
+    async function getPlayerKey() {
+        let saved = localStorage.getItem('CG_Token');
+        if (saved && /^[a-f0-9]{64}$/.test(saved)) return saved;
+        const random = new Uint8Array(32);
+        crypto.getRandomValues(random);
+        const raw = Array.from(random, b => b.toString(16).padStart(2, '0')).join('') + crypto.randomUUID();
+        saved = await sha256(raw);
+        localStorage.setItem('CG_Token', saved);
+        return saved;
+    }
+
+    let nameRequired = false;
+    let chatMuted = false;
+
+    function setUsernameRequired(required) {
+        nameRequired = required;
+        chatNameRow.style.display = 'flex';
+        chatNameSetup.style.display = required ? 'block' : 'none';
+        chatNameSave.textContent = required ? 'Set' : 'Change';
+        chatInput.disabled = required || chatMuted || !chatSocket || chatSocket.readyState !== WebSocket.OPEN;
+        chatSend.disabled = chatInput.disabled;
+        chatImageBtn.disabled = chatInput.disabled;
+        chatInput.placeholder = chatMuted ? 'You are chat banned' : required ? 'Set a username to start chatting' : 'Type a message...';
+        if (required && isChatOpen()) chatNameInput.focus();
+    }
+
+    function sendGameUpdate(game) {
+        currentGame = game || null;
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'game_update', game: currentGame }));
+        }
+    }
+
+    const pageTitleText = document.title;
+
+    function updateBadge() {
+        if (chatUnread > 0) {
+            chatBadge.textContent = chatUnread > 99 ? '99+' : String(chatUnread);
+            chatBadge.style.display = 'block';
+        } else {
+            chatBadge.style.display = 'none';
+        }
+        chatToggle.classList.toggle('unread', chatUnread > 0);
+        document.title = chatUnread > 0 ? `(${chatUnread > 99 ? '99+' : chatUnread}) ${pageTitleText}` : pageTitleText;
+    }
+
+    function setOnlineCount(count) {
+        if (typeof count === 'number' && count >= 0) {
+            chatOnlineCountText.textContent = `${count} online`;
+            chatOnlineCount.classList.remove('offline');
+            chatOnlineCount.title = `${count} player${count === 1 ? '' : 's'} online`;
+        } else {
+            chatOnlineCountText.textContent = '-';
+            chatOnlineCount.classList.add('offline');
+            chatOnlineCount.title = 'Players online';
+        }
+        chatOnlineCount.style.cursor = isStaff() ? 'pointer' : 'default';
+    }
+
+    function isChatOpen() {
+        return chatBox.style.display === 'flex';
+    }
+
+    const knownNames = new Map();
+    const chatRawText = new WeakMap();
+    let onlineMentions = [];
+    let mentionListAt = 0;
+    let mentionMatches = [];
+    let mentionIndex = 0;
+    let mentionToastTimer = null;
+
+    function rememberName(name, userId, role) {
+        if (!name) return false;
+        const key = name.toLowerCase();
+        const had = knownNames.get(key);
+        if (had && had.user_id === userId && had.name === name) return false;
+        knownNames.forEach((entry, oldKey) => {
+            if (entry.user_id === userId && oldKey !== key) knownNames.delete(oldKey);
+        });
+        knownNames.set(key, { name, user_id: userId, role: role || 'player' });
+        return true;
+    }
+
+    function nameAt(text, index) {
+        let best = null;
+        knownNames.forEach((entry, key) => {
+            if (best && best.length >= key.length) return;
+            if (text.substr(index, key.length).toLowerCase() !== key) return;
+            const next = text.charAt(index + key.length);
+            if (next && /[A-Za-z0-9_]/.test(next)) return;
+            best = key;
+        });
+        return best;
+    }
+
+    function renderMentions(el) {
+        const text = chatRawText.get(el) || '';
+        el.textContent = '';
+        let plain = '';
+        let i = 0;
+        while (i < text.length) {
+            const before = i > 0 ? text.charAt(i - 1) : '';
+            const key = text.charAt(i) === '@' && !/[A-Za-z0-9_]/.test(before) ? nameAt(text, i + 1) : null;
+            if (!key) {
+                plain += text.charAt(i);
+                i++;
+                continue;
+            }
+            if (plain) el.appendChild(document.createTextNode(plain));
+            plain = '';
+            const entry = knownNames.get(key);
+            const span = document.createElement('span');
+            span.className = 'mention';
+            span.textContent = text.substr(i, key.length + 1);
+            span.title = 'View profile';
+            span.addEventListener('click', () => requestProfile(entry.user_id));
+            el.appendChild(span);
+            i += key.length + 1;
+        }
+        if (plain) el.appendChild(document.createTextNode(plain));
+    }
+
+    function rerenderMentions() {
+        document.querySelectorAll('#chatMessages .chat-text').forEach(renderMentions);
+    }
+
+    function mentionsMe(text) {
+        if (!chatName || typeof text !== 'string') return false;
+        const key = chatName.toLowerCase();
+        const lower = text.toLowerCase();
+        let at = lower.indexOf('@' + key);
+        while (at !== -1) {
+            const before = at > 0 ? lower.charAt(at - 1) : '';
+            const next = lower.charAt(at + key.length + 1);
+            if (!/[a-z0-9_]/.test(before) && !(next && /[a-z0-9_]/.test(next))) return true;
+            at = lower.indexOf('@' + key, at + 1);
+        }
+        return false;
+    }
+
+    function askForMentionList(force) {
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        if (!force && Date.now() - mentionListAt < 4000) return;
+        mentionListAt = Date.now();
+        chatSocket.send(JSON.stringify({ type: 'mention_list' }));
+    }
+
+    function showMentionToast(from, text) {
+        document.getElementById('mentionToastTitle').textContent = (from || 'Someone') + ' mentioned you';
+        document.getElementById('mentionToastText').textContent = text || '';
+        const toast = document.getElementById('mentionToast');
+        toast.classList.add('show');
+        clearTimeout(mentionToastTimer);
+        mentionToastTimer = setTimeout(hideMentionToast, 7000);
+    }
+
+    function hideMentionToast() {
+        clearTimeout(mentionToastTimer);
+        document.getElementById('mentionToast').classList.remove('show');
+    }
+
+    function mentionQuery() {
+        const caret = chatInput.selectionStart;
+        if (caret === null || caret !== chatInput.selectionEnd) return null;
+        const match = chatInput.value.slice(0, caret).match(/(^|[^A-Za-z0-9_])@([A-Za-z0-9_ -]{0,24})$/);
+        if (!match) return null;
+        return { query: match[2], start: caret - match[2].length - 1, end: caret };
+    }
+
+    function closeMentionPicker() {
+        mentionMatches = [];
+        mentionPicker.classList.remove('open');
+        mentionPicker.textContent = '';
+    }
+
+    function updateMentionPicker() {
+        const found = mentionQuery();
+        if (!found) return closeMentionPicker();
+        askForMentionList(false);
+        const query = found.query.toLowerCase();
+        mentionMatches = onlineMentions
+            .filter(p => p.user_id !== chatUserId && p.username.toLowerCase().startsWith(query))
+            .sort((a, b) => a.username.localeCompare(b.username))
+            .slice(0, 8);
+        if (!mentionMatches.length && query.includes(' ')) return closeMentionPicker();
+        mentionIndex = Math.min(mentionIndex, Math.max(mentionMatches.length - 1, 0));
+        mentionPicker.textContent = '';
+        if (!mentionMatches.length) {
+            const empty = document.createElement('div');
+            empty.className = 'mention-empty';
+            empty.textContent = onlineMentions.length ? 'No one online by that name' : 'Loading...';
+            mentionPicker.appendChild(empty);
+        }
+        mentionMatches.forEach((p, i) => {
+            const option = document.createElement('div');
+            option.className = 'mention-option' + (i === mentionIndex ? ' active' : '') + (p.role === 'creator' ? ' creator' : '');
+            option.textContent = '@' + p.username;
+            option.addEventListener('mousedown', event => {
+                event.preventDefault();
+                pickMention(i);
+            });
+            mentionPicker.appendChild(option);
+        });
+        mentionPicker.classList.add('open');
+    }
+
+    function pickMention(i) {
+        const found = mentionQuery();
+        const p = mentionMatches[i];
+        if (!found || !p) return closeMentionPicker();
+        const value = chatInput.value;
+        const insert = '@' + p.username + ' ';
+        chatInput.value = value.slice(0, found.start) + insert + value.slice(found.end).replace(/^ /, '');
+        const caret = found.start + insert.length;
+        chatInput.setSelectionRange(caret, caret);
+        closeMentionPicker();
+        chatInput.focus();
+    }
+
+    function addChatMessage(Data) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'chat-message';
+        wrapper.dataset.messageId = Data.id;
+        wrapper.dataset.userId = Data.user_id;
+
+        const name = document.createElement('button');
+        name.className = 'chat-name' + (Data.creator ? ' creator' : '');
+        if (!Data.creator && Data.name_color) {
+            name.style.color = Data.name_color;
+            name.dataset.personal = '1';
+        }
+        name.dataset.chatName = 'true';
+        name.style.fontSize = '11px';
+        name.style.marginBottom = '2px';
+        name.textContent = Data.username || 'Unknown';
+        name.title = `View profile`;
+        name.addEventListener('click', () => requestProfile(Data.user_id));
+
+
+        rememberName(Data.username, Data.user_id, Data.creator ? 'creator' : 'player');
+
+        const deleted = Boolean(Data.deleted);
+        const message = document.createElement('div');
+        message.className = 'chat-text';
+        chatRawText.set(message, String(Data.message || ''));
+        renderMentions(message);
+        if (deleted) wrapper.classList.add('deleted');
+        else if (Data.user_id !== chatUserId && mentionsMe(Data.message)) wrapper.classList.add('mentions-me');
+
+        const time = document.createElement('div');
+        time.className = 'chat-time';
+        time.style.fontSize = '9px';
+        time.style.color = '#888';
+        time.style.marginTop = '4px';
+        time.textContent = formatChatTime(Data.timestamp);
+
+        wrapper.appendChild(name);
+        applyRoleDisplay(wrapper, Data.custom_role);
+        if (message.textContent || deleted) wrapper.appendChild(message);
+        if (!deleted && safeImage(Data.image)) {
+            const picture = document.createElement('img');
+            picture.className = 'chat-image';
+            picture.alt = 'Image from ' + (Data.username || 'Unknown');
+            picture.addEventListener('load', () => { chatMessages.scrollTop = chatMessages.scrollHeight; });
+            picture.addEventListener('click', () => openImageView(Data.image));
+            picture.src = Data.image;
+            wrapper.appendChild(picture);
+        }
+        wrapper.appendChild(time);
+        if (can('delete') && !deleted) attachDeleteButton(wrapper);
+        chatMessages.appendChild(wrapper);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    const imagePrefixes = ['data:image/jpeg;base64,', 'data:image/png;base64,', 'data:image/gif;base64,', 'data:image/webp;base64,'];
+
+    function safeImage(value) {
+        return typeof value === 'string' && imagePrefixes.some(prefix => value.startsWith(prefix));
+    }
+
+    function openImageView(source) {
+        document.getElementById('imageViewImg').src = source;
+        document.getElementById('imageViewModal').style.display = 'flex';
+    }
+
+    const typingUsers = new Map();
+    const typingIndicator = document.getElementById('typingIndicator');
+    const typingText = document.getElementById('typingText');
+    let lastTypingSent = 0;
+
+    function renderTyping() {
+        const now = Date.now();
+        typingUsers.forEach((entry, id) => {
+            if (entry.expires <= now) typingUsers.delete(id);
+        });
+        const names = Array.from(typingUsers.values()).map(entry => entry.name);
+        if (!names.length) {
+            typingIndicator.classList.remove('show');
+            return;
+        }
+        let text;
+        if (names.length > 3) text = 'Several people are typing';
+        else if (names.length === 1) text = names[0] + ' is typing';
+        else text = names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] + ' are typing';
+        typingText.textContent = text;
+        typingIndicator.classList.add('show');
+    }
+
+    setInterval(renderTyping, 1000);
+
+    function noteTyping() {
+        const value = chatInput.value;
+        if (!value.trim() || value.startsWith('/') || !chatName) return;
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const now = Date.now();
+        if (now - lastTypingSent < 2500) return;
+        lastTypingSent = now;
+        chatSocket.send(JSON.stringify({ type: 'typing' }));
+    }
+
+    let shiftHeld = false;
+
+    function setShiftHeld(held) {
+        if (held === shiftHeld) return;
+        shiftHeld = held;
+        document.querySelectorAll('.msg-delete').forEach(button => {
+            button.textContent = held && isCreator ? 'Remove' : 'Delete';
+        });
+    }
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Shift') setShiftHeld(true);
+    });
+    document.addEventListener('keyup', event => {
+        if (event.key === 'Shift') setShiftHeld(false);
+    });
+    window.addEventListener('blur', () => setShiftHeld(false));
+
+    function attachDeleteButton(wrapper) {
+        if (wrapper.querySelector('.msg-delete')) return;
+        const button = document.createElement('button');
+        button.className = 'msg-delete';
+        button.title = 'Delete message';
+        button.textContent = shiftHeld && isCreator ? 'Remove' : 'Delete';
+        button.addEventListener('click', event => {
+            event.stopPropagation();
+            if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+            chatSocket.send(JSON.stringify({ type: 'delete_message', id: wrapper.dataset.messageId, remove: event.shiftKey && isCreator }));
+        });
+        wrapper.appendChild(button);
+    }
+
+    function refreshDeleteButtons() {
+        document.querySelectorAll('#chatMessages .chat-message[data-message-id]').forEach(entry => {
+            const existing = entry.querySelector('.msg-delete');
+            if (can('delete') && !entry.classList.contains('deleted')) attachDeleteButton(entry);
+            else if (existing) existing.remove();
+        });
+    }
+
+    function markDeleted(id, text) {
+        const entry = Array.from(chatMessages.children).find(el => el.dataset.messageId === id);
+        if (!entry) return;
+        entry.classList.remove('mentions-me');
+        entry.classList.add('deleted');
+        entry.querySelectorAll('.chat-image, .msg-delete').forEach(el => el.remove());
+        let body = entry.querySelector('.chat-text');
+        if (!body) {
+            body = document.createElement('div');
+            body.className = 'chat-text';
+            entry.insertBefore(body, entry.querySelector('.chat-time'));
+        }
+        chatRawText.set(body, text);
+        body.textContent = text;
+    }
+
+    function addSystemMessage(text, color) {
+        const note = document.createElement('div');
+        note.className = 'chat-message';
+        note.style.color = color || '#aaaaaa';
+        note.style.fontStyle = 'italic';
+        note.textContent = text;
+        chatMessages.appendChild(note);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function updateChatNames(UserId, Name) {
+        document.querySelectorAll('.chat-message').forEach(Entry => {
+            if (Entry.dataset.userId === String(UserId)) {
+                const NameElement = Entry.querySelector('[data-chat-name]');
+                if (NameElement) {
+                    const textNode = Array.from(NameElement.childNodes).find(n => n.nodeType === 3);
+                    if (textNode) textNode.textContent = Name || 'Unknown';
+                    else NameElement.textContent = Name || 'Unknown';
+                }
+            }
+        });
+    }
+
+    function applyRoleDisplay(wrapper, role) {
+        const name = wrapper.querySelector('[data-chat-name]');
+        if (!name) return;
+        const base = name.classList.contains('creator');
+        if (role && !base) {
+            wrapper.dataset.roleId = String(role.id);
+            name.dataset.roleColor = role.color || '';
+        } else {
+            delete wrapper.dataset.roleId;
+            name.dataset.roleColor = '';
+        }
+        if (!name.dataset.personal) name.style.color = name.dataset.roleColor || '';
+    }
+
+    function refreshRoleDisplays() {
+        document.querySelectorAll('.chat-message[data-role-id]').forEach(entry => {
+            const role = rolesList.find(r => String(r.id) === entry.dataset.roleId) || null;
+            applyRoleDisplay(entry, role);
+        });
+    }
+
+    function updateChatRole(UserId, role, customRole) {
+        document.querySelectorAll('.chat-message').forEach(Entry => {
+            if (Entry.dataset.userId === String(UserId)) {
+                const NameElement = Entry.querySelector('[data-chat-name]');
+                if (NameElement) {
+                    NameElement.classList.remove('creator');
+                    if (role === 'creator') NameElement.classList.add('creator');
+                    if (role === 'creator') NameElement.style.color = '';
+                }
+                applyRoleDisplay(Entry, customRole || null);
+            }
+        });
+    }
+
+    function updateChatColor(UserId, color) {
+        document.querySelectorAll('.chat-message').forEach(Entry => {
+            if (Entry.dataset.userId === String(UserId)) {
+                const NameElement = Entry.querySelector('[data-chat-name]');
+                if (NameElement && !NameElement.classList.contains('creator')) {
+                    NameElement.dataset.personal = color ? '1' : '';
+                    NameElement.style.color = color || NameElement.dataset.roleColor || '';
+                }
+            }
+        });
+    }
+
+    function requestProfile(userId) {
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        chatSocket.send(JSON.stringify({ type: 'profile', user_id: Number(userId) }));
+    }
+
+    function setProfileTab(name) {
+        document.querySelectorAll('#profileTabs .profile-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === name);
+        });
+        document.querySelectorAll('#profileModal .profile-pane').forEach(pane => {
+            pane.classList.toggle('active', pane.dataset.pane === name);
+        });
+    }
+
+    function showProfile(profile) {
+        profileViewId = profile.user_id;
+        profileName.textContent = profile.username || 'Username not set';
+        if (profile.creator) {
+            const badge = document.createElement('span');
+            badge.className = 'creator-badge';
+            badge.textContent = 'Creator';
+            profileName.appendChild(badge);
+        } else if (profile.custom_role) {
+            const badge = document.createElement('span');
+            badge.className = 'role-badge';
+            badge.textContent = profile.custom_role.name;
+            badge.style.color = profile.custom_role.color || '#aaaaaa';
+            profileName.appendChild(badge);
+        }
+        profileId.textContent = profile.user_id;
+        profileStatus.textContent = profile.online ? 'Online' : 'Offline';
+
+        profileGame.innerHTML = '';
+        const hasGame = profile.online && games.includes(profile.current_game);
+        if (profile.private) {
+            profileGame.textContent = 'Hidden';
+        } else if (hasGame) {
+            const gameLink = document.createElement('button');
+            gameLink.textContent = cleanName(profile.current_game);
+            gameLink.style.cssText = 'background:none;border:none;color:#7eb8f7;text-decoration:underline;cursor:pointer;padding:0;font:inherit;font-size:13px;';
+            gameLink.addEventListener('click', () => {
+                profileModal.style.display = 'none';
+                openGame(profile.current_game);
+            });
+            profileGame.appendChild(gameLink);
+        } else {
+            profileGame.textContent = 'Not playing';
+        }
+
+        const banStatusEl = document.getElementById('profileBanStatus');
+        banStatusEl.innerHTML = '';
+        if (profile.banned) {
+            const el = document.createElement('div');
+            el.className = 'profile-ban-status full-ban';
+            const until = profile.ban_end && profile.ban_end !== 'never'
+                ? 'until ' + new Date(profile.ban_end).toLocaleString()
+                : 'permanently';
+            el.textContent = 'Banned ' + until + (profile.ban_reason ? '. Reason: ' + profile.ban_reason : '');
+            banStatusEl.appendChild(el);
+        } else if (profile.chat_banned) {
+            const el = document.createElement('div');
+            el.className = 'profile-ban-status chat-ban';
+            const until = profile.chat_ban_end && profile.chat_ban_end !== 'never'
+                ? 'until ' + new Date(profile.chat_ban_end).toLocaleString()
+                : 'permanently';
+            el.textContent = 'Chat banned ' + until + (profile.chat_ban_reason ? '. Reason: ' + profile.chat_ban_reason : '');
+            banStatusEl.appendChild(el);
+        }
+
+        const isSelf = profile.user_id === chatUserId;
+        const targetRole = profile.role || 'player';
+        const canBan = can('ban');
+        const canRename = can('rename');
+        let showMod;
+        if (isSelf) showMod = false;
+        else if (isCreator) showMod = targetRole !== 'creator';
+        else showMod = (canBan || canRename) && targetRole === 'player' && !profile.custom_role;
+        const showPerms = isCreator && !isSelf && targetRole !== 'creator';
+        const canAskScreenshare = (can('screenshare') || myScreensharePerm) && !isSelf && profile.online;
+
+        document.getElementById('tabModBtn').style.display = showMod ? 'block' : 'none';
+        document.getElementById('tabPermsBtn').style.display = showPerms ? 'block' : 'none';
+        document.getElementById('profileTabs').style.display = (showMod || showPerms) ? 'flex' : 'none';
+        setProfileTab('info');
+
+        document.getElementById('unbanBtn').style.display = canBan && (profile.banned || profile.chat_banned) ? 'block' : 'none';
+        document.getElementById('banFields').style.display = canBan ? '' : 'none';
+        document.getElementById('banBtn').style.display = canBan ? '' : 'none';
+        document.getElementById('resetNameBtn').style.display = canRename ? '' : 'none';
+        fillRoleSelect(profile.assigned_role_id !== undefined ? profile.assigned_role_id : (profile.custom_role ? profile.custom_role.id : null));
+        document.getElementById('viewScreenBtn').style.display = canAskScreenshare ? 'block' : 'none';
+
+        document.getElementById('adminSetNameInput').value = '';
+        document.getElementById('adminSetNameInput').placeholder = profile.username || 'New name...';
+        document.getElementById('adminColorInput').value = profile.name_color || '#ffffff';
+
+        document.getElementById('banDuration').value = '0';
+        document.getElementById('banReason').value = '';
+        document.getElementById('banChatOnly').checked = false;
+        document.getElementById('customMinRow').style.display = 'none';
+        document.getElementById('banCustomMinutes').value = '';
+        document.getElementById('banCustomUnit').value = '1';
+
+        profileModal.style.display = 'flex';
+    }
+
+    function openChat() {
+        chatBox.style.display = 'flex';
+        hideMentionToast();
+        chatUnread = 0;
+        updateBadge();
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (chatName) chatInput.focus();
+        else {
+            chatNameSetup.style.display = 'block';
+            chatNameRow.style.display = 'flex';
+            chatInput.placeholder = 'Set a username to start chatting';
+            chatNameInput.focus();
+        }
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) connectChat();
+    }
+
+    function closeChat() {
+        chatBox.style.display = 'none';
+        typingUsers.clear();
+        renderTyping();
+    }
+
+    function scheduleChatRetry() {
+        if (pageBlocked || chatRetryTimer) return;
+        debugPush('info', 'trying again in 5 seconds');
+        chatRetryTimer = setTimeout(() => {
+            chatRetryTimer = null;
+            connectChat();
+        }, 5000);
+    }
+
+    async function connectChat() {
+        if (pageBlocked || chatConnecting || (chatSocket && chatSocket.readyState === WebSocket.OPEN)) return;
+        if (!hasSavedKey() && !newPlayerChosen) {
+            openLogin(true);
+            return;
+        }
+
+        chatConnecting = true;
+        chatStatus.textContent = 'Connecting...';
+        chatConnect.style.display = 'none';
+
+        try {
+            if (!playerKey) playerKey = await getPlayerKey();
+            debugPush('info', 'connecting to server');
+            chatSocket = new WebSocket(CHAT_WS);
+
+            const rawSend = chatSocket.send.bind(chatSocket);
+            chatSocket.send = payload => {
+                let parsed = null;
+                try {
+                    parsed = JSON.parse(payload);
+                } catch {}
+                if (parsed && !debugHidden.includes(parsed.type)) {
+                    const shown = stripImages(parsed);
+                    ['player_key', 'passcode', 'current_passcode'].forEach(field => {
+                        if (field in shown) shown[field] = 'hidden';
+                    });
+                    debugPush('to', parsed.type, shown);
+                }
+                rawSend(payload);
+            };
+
+            chatSocket.onopen = () => {
+                debugPush('info', 'connected');
+                chatConnecting = false;
+                chatStatus.textContent = 'Connected';
+                chatNameSave.disabled = false;
+                chatConnect.style.display = 'none';
+                chatSocket.send(JSON.stringify({ type: 'identify', player_key: playerKey }));
+            };
+
+            chatSocket.onmessage = event => {
+                try {
+                    const Data = JSON.parse(event.data);
+                    if (!debugHidden.includes(Data.type)) {
+                        debugPush('from', Data.type, stripImages(Data));
+                    }
+
+                    if (Data.type === 'welcome') {
+                        const previousId = Number(localStorage.getItem('CG_UserId') || 0);
+                        if (previousId && previousId !== Data.user_id && !newPlayerChosen) {
+                            debugPush('warn', `this browser was account ${previousId} but the server made it a new account ${Data.user_id}`);
+                            debugPush('info', 'use log in to get the old account back');
+                            setTimeout(() => openLogin(false), 300);
+                        }
+                        chatUserId = Data.user_id;
+                        isCreator = Boolean(Data.creator);
+                        myScreensharePerm = Boolean(Data.screenshare_perm);
+                        localStorage.setItem('CG_UserId', String(Data.user_id));
+
+                        chatName = Data.username || '';
+                        chatNameInput.value = chatName;
+                        chatPrivacy.checked = Boolean(Data.private);
+
+                        if (chatName) localStorage.setItem('CG_Name', chatName);
+                        else localStorage.removeItem('CG_Name');
+                        rememberName(chatName, chatUserId, Data.role);
+                        askForMentionList(true);
+
+                        setUsernameRequired(Data.needs_username);
+                        sendGameUpdate(currentGame);
+                        staffCommands = Array.isArray(Data.commands) ? Data.commands : [];
+                        applyAccess(Data);
+
+                        hasPasscode = Boolean(Data.has_passcode);
+                        updateAccountRow();
+                        if (Array.isArray(Data.favorites)) {
+                            localStorage.setItem('favorites', JSON.stringify(Data.favorites));
+                            buildMenu();
+                        } else if (getFavorites().length) {
+                            saveFavorites(getFavorites());
+                        }
+                        debugPush('info', `logged in as ${Data.username || 'someone with no name yet'}, id ${Data.user_id}, ${Data.role || 'player'}`);
+                        chatMuted = Boolean(Data.chat_muted);
+                        setUsernameRequired(Boolean(Data.needs_username));
+                        if (chatMuted) debugPush('warn', 'this account is chat banned');
+                        if (saveAfterWelcome) {
+                            saveAfterWelcome = false;
+                            openRecovery();
+                        } else {
+                            maybeAskForPasscode();
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'recovery_saved') {
+                        hasPasscode = true;
+                        localStorage.removeItem('CG_PasscodeLater');
+                        updateAccountRow();
+                        const error = document.getElementById('recoveryError');
+                        error.textContent = 'Saved.';
+                        error.classList.add('ok');
+                        setTimeout(() => { document.getElementById('recoveryModal').style.display = 'none'; }, 900);
+                        return;
+                    }
+
+                    if (Data.type === 'account_logout_done') {
+                        const error = document.getElementById('recoveryError');
+                        error.textContent = 'Every other device was logged out.';
+                        error.classList.add('ok');
+                        document.getElementById('recoveryCurrent').value = '';
+                        return;
+                    }
+
+                    if (Data.type === 'recovery_error') {
+                        document.getElementById('recoveryError').textContent = Data.message;
+                        document.getElementById('recoverySaveBtn').disabled = false;
+                        return;
+                    }
+
+                    if (Data.type === 'unbanned') {
+                        chatMuted = false;
+                        setUsernameRequired(nameRequired);
+                        addSystemMessage('Your ban was lifted.', '#88dd88');
+                        return;
+                    }
+
+                    if (Data.type === 'banned') {
+                        const chatOnly = Data.chat_only;
+                        const end = Data.Ban_end_date && Data.Ban_end_date !== 'never'
+                            ? new Date(Data.Ban_end_date).toLocaleString()
+                            : 'never';
+                        const reasonText = Data.reason ? ' Reason: ' + Data.reason + '.' : '';
+
+                        if (chatOnly) {
+                            addSystemMessage('You have been chat banned. You can still use the site but not send messages.' + (end !== 'never' ? ' Ban ends: ' + end + '.' : '') + reasonText, '#ffcc55');
+                            chatInput.disabled = true;
+                            chatSend.disabled = true;
+                            chatMuted = true;
+                            setUsernameRequired(nameRequired);
+                        } else {
+                            isBanned = true;
+                            showForbidden({
+                                status: 403,
+                                error: "Banned",
+                                message: "You have been banned.",
+                                Ban_end_date: end,
+                                reason: Data.reason || undefined,
+                            }, { via: 'chat server', url: CHAT_WS });
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'ban_applied') {
+                        const until = Data.ban_end === 'never' ? 'permanently' : 'until ' + new Date(Data.ban_end).toLocaleString();
+                        addSystemMessage(`${Data.chat_only ? 'Chat banned' : 'Banned'} user ${Data.user_id} ${until}.`, '#ffcc55');
+                        return;
+                    }
+
+                    if (Data.type === 'unban_applied') {
+                        addSystemMessage(`Unbanned user ${Data.user_id}.`, '#88dd88');
+                        return;
+                    }
+
+                    if (Data.type === 'name_reset_applied') {
+                        addSystemMessage(`Reset name for user ${Data.user_id}.`, '#aaaaaa');
+                        return;
+                    }
+
+                    if (Data.type === 'username_set') {
+                        if (Data.user_id === profileViewId && profileName.firstChild) {
+                            profileName.firstChild.textContent = Data.username;
+                            document.getElementById('adminSetNameInput').value = '';
+                            document.getElementById('adminSetNameInput').placeholder = Data.username;
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'color_change') {
+                        updateChatColor(Data.user_id, Data.name_color);
+                        return;
+                    }
+
+                    if (Data.type === 'color_set') {
+                        if (Data.user_id === profileViewId) {
+                            document.getElementById('adminColorInput').value = Data.name_color || '#ffffff';
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'screenshare_perm_change') {
+                        myScreensharePerm = Boolean(Data.allowed);
+                        return;
+                    }
+
+                    if (Data.type === 'approval_request') {
+                        if (isCreator && typeof Data.id === 'string') {
+                            approvalQueue.push(Data);
+                            showNextApproval();
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'approval_done') {
+                        const at = approvalQueue.findIndex(item => item.id === Data.id);
+                        if (at !== -1) {
+                            approvalQueue.splice(at, 1);
+                            if (at === 0) showNextApproval();
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'logged_out') {
+                        if (Data.cleared) localStorage.removeItem('CG_Token');
+                        location.reload();
+                        return;
+                    }
+
+                    if (Data.type === 'message_removed') {
+                        const gone = Array.from(chatMessages.children).find(el => el.dataset.messageId === Data.id);
+                        if (gone) gone.remove();
+                        return;
+                    }
+
+                    if (Data.type === 'role_change') {
+                        isCreator = Data.role === 'creator';
+                        staffCommands = Array.isArray(Data.commands) ? Data.commands : [];
+                        applyAccess(Data);
+                        if (!isStaff()) {
+                            closeCommandPicker();
+                            closeCommandForm();
+                            document.getElementById('commandHint').style.display = 'none';
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'role_broadcast') {
+                        updateChatRole(Data.user_id, Data.role, Data.custom_role);
+                        return;
+                    }
+
+                    if (Data.type === 'roles_updated') {
+                        rolesList = Array.isArray(Data.roles) ? Data.roles : [];
+                        refreshRoleDisplays();
+                        renderRolesList();
+                        if (pendingRoleSave) {
+                            pendingRoleSave = false;
+                            fillRoleEditor(null);
+                            document.getElementById('roleError').textContent = 'Saved.';
+                        }
+                        const select = document.getElementById('roleAssignSelect');
+                        fillRoleSelect(select.value ? Number(select.value) : null);
+                        if (editingRoleId !== null && !rolesList.some(r => r.id === editingRoleId)) fillRoleEditor(null);
+                        return;
+                    }
+
+                    if (Data.type === 'role_assigned') {
+                        if (Data.user_id === profileViewId) fillRoleSelect(Data.custom_role ? Data.custom_role.id : null);
+                        addSystemMessage(Data.custom_role ? 'Role set to ' + Data.custom_role.name + '.' : 'Role removed.', '#88dd88');
+                        return;
+                    }
+
+                    if (Data.type === 'permission_notice') {
+                        addSystemMessage(Data.message, Data.granted ? '#e0b84c' : '#ff9999');
+                        if (!isChatOpen()) {
+                            chatUnread++;
+                            updateBadge();
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'admin_log') {
+                        addSystemMessage(Data.message, '#e0b84c');
+                        return;
+                    }
+
+                    if (Data.type === 'chat_cleared') {
+                        document.getElementById('chatMessages').innerHTML = '';
+                        addSystemMessage('Chat was cleared.', '#888888');
+                        return;
+                    }
+
+                    if (Data.type === 'history') {
+                        chatMessages.innerHTML = '';
+                        Data.messages.forEach(Message => rememberName(Message.username, Message.user_id, Message.creator ? 'creator' : 'player'));
+                        Data.messages.forEach(Message => addChatMessage(Message));
+                        return;
+                    }
+
+                    if (Data.type === 'user_count') {
+                        setOnlineCount(Data.count);
+                        mentionListAt = 0;
+                        if (mentionPicker.classList.contains('open')) askForMentionList(true);
+                        return;
+                    }
+
+                    if (Data.type === 'mention_list') {
+                        onlineMentions = (Array.isArray(Data.players) ? Data.players : []).filter(p => p && typeof p.username === 'string' && p.username);
+                        let learned = false;
+                        onlineMentions.forEach(p => {
+                            if (rememberName(p.username, p.user_id, p.role)) learned = true;
+                        });
+                        if (learned) rerenderMentions();
+                        if (mentionPicker.classList.contains('open')) updateMentionPicker();
+                        if (activeCommand) refreshPlayerList();
+                        return;
+                    }
+
+                    if (Data.type === 'typing') {
+                        if (Data.user_id !== chatUserId && typeof Data.username === 'string') {
+                            typingUsers.set(Data.user_id, { name: Data.username, expires: Date.now() + 4500 });
+                            renderTyping();
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'message') {
+                        typingUsers.delete(Data.user_id);
+                        renderTyping();
+                        const learned = rememberName(Data.username, Data.user_id, Data.creator ? 'creator' : 'player');
+                        addChatMessage(Data);
+                        if (learned) rerenderMentions();
+                        const fromOther = Data.user_id !== chatUserId;
+                        if (!isChatOpen() && fromOther) {
+                            chatUnread++;
+                            updateBadge();
+                            if (mentionsMe(Data.message)) showMentionToast(Data.username, Data.message);
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'name_change') {
+                        let oldRole = 'player';
+                        knownNames.forEach((entry, key) => {
+                            if (entry.user_id !== Data.user_id) return;
+                            oldRole = entry.role;
+                            if (!Data.username) knownNames.delete(key);
+                        });
+                        if (Data.username) rememberName(Data.username, Data.user_id, oldRole);
+                        rerenderMentions();
+                        updateChatNames(Data.user_id, Data.username);
+                        if (Data.user_id === chatUserId && !nameRequired) {
+                            chatName = Data.username || '';
+                            if (chatName) localStorage.setItem('CG_Name', chatName);
+                            else localStorage.removeItem('CG_Name');
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'username_saved') {
+                        chatName = Data.username;
+                        localStorage.setItem('CG_Name', chatName);
+                        if (rememberName(chatName, chatUserId)) rerenderMentions();
+                        setUsernameRequired(false);
+                        return;
+                    }
+
+                    if (Data.type === 'privacy_saved') {
+                        chatPrivacy.checked = Boolean(Data.private);
+                        return;
+                    }
+
+                    if (Data.type === 'identity_change') {
+                        if (chatUserId === Data.old_user_id) {
+                            chatUserId = Data.user_id;
+                            localStorage.setItem('CG_UserId', String(Data.user_id));
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'username_required') {
+                        chatName = '';
+                        chatNameInput.value = '';
+                        localStorage.removeItem('CG_Name');
+                        setUsernameRequired(true);
+                        openChat();
+                        return;
+                    }
+
+                    if (Data.type === 'profile') {
+                        showProfile(Data.profile);
+                        return;
+                    }
+
+                    if (Data.type === 'online_list') {
+                        const list = document.getElementById('playersModalList');
+                        list.innerHTML = '';
+                        if (!Data.players || Data.players.length === 0) {
+                            const empty = document.createElement('div');
+                            empty.style.cssText = 'color:#888;font-size:13px;padding:8px 0;';
+                            empty.textContent = 'Nobody online right now.';
+                            list.appendChild(empty);
+                        } else {
+                            Data.players.forEach(p => {
+                                const row = document.createElement('div');
+                                row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #252525;font-size:13px;cursor:pointer;';
+                                row.addEventListener('click', () => {
+                                    document.getElementById('playersModal').style.display = 'none';
+                                    requestProfile(p.user_id);
+                                });
+                                const nameSpan = document.createElement('span');
+                                nameSpan.textContent = p.username || ('User ' + p.user_id);
+                                nameSpan.style.fontWeight = '500';
+                                nameSpan.className = p.role === 'creator' ? 'chat-name creator' : '';
+                                if (nameSpan.className) nameSpan.style.cursor = 'pointer';
+                                const gameSpan = document.createElement('span');
+                                gameSpan.style.color = '#888';
+                                const cg = p.current_game && p.current_game !== 'None' ? p.current_game : null;
+                                gameSpan.textContent = p.private ? 'private' : (cg ? cleanName(cg) : 'idle');
+                                row.appendChild(nameSpan);
+                                row.appendChild(gameSpan);
+                                list.appendChild(row);
+                            });
+                        }
+                        document.getElementById('playersModal').style.display = 'flex';
+                        return;
+                    }
+
+                    if (Data.type === 'screenshare_incoming') {
+                        document.getElementById('screenshareAskText').textContent = (Data.from_username || 'The admin') + ' requested for you to screenshare';
+                        document.getElementById('screenshareAskModal').style.display = 'flex';
+                        return;
+                    }
+
+                    if (Data.type === 'screenshare_response') {
+                        const statusEl = document.getElementById('screenshareViewStatus');
+                        if (Data.accept) {
+                            statusEl.textContent = 'They said yes, waiting for the picture...';
+                        } else {
+                            statusEl.textContent = Data.reason === 'offline' ? 'They went offline.' : 'They said no.';
+                            setTimeout(() => {
+                                document.getElementById('screenshareViewModal').style.display = 'none';
+                            }, 1500);
+                        }
+                        return;
+                    }
+
+                    if (Data.type === 'screenshare_frame') {
+                        if (typeof Data.data !== 'string' || !Data.data.startsWith('data:image/jpeg;base64,')) return;
+                        document.getElementById('screenshareImg').src = Data.data;
+                        document.getElementById('screenshareViewStatus').textContent = 'Live';
+                        return;
+                    }
+
+                    if (Data.type === 'screenshare_stop') {
+                        stopScreenshareCapture();
+                        const viewModal = document.getElementById('screenshareViewModal');
+                        if (viewModal.style.display === 'flex') {
+                            const name = document.getElementById('screenshareViewTitle').textContent.replace(/'s screen$/, '') || 'They';
+                            document.getElementById('screenshareViewStatus').textContent = name + ' disconnected.';
+                            setTimeout(() => { viewModal.style.display = 'none'; }, 1800);
+                        }
+                        document.getElementById('screenshareAskModal').style.display = 'none';
+                        return;
+                    }
+
+                    if (Data.type === 'command_result') {
+                        addSystemMessage(Data.message, Data.ok ? '#88dd88' : '#ff7777');
+                        return;
+                    }
+
+                    if (Data.type === 'command_screenshare') {
+                        startScreenshareView(Data.user_id, Data.username);
+                        return;
+                    }
+
+                    if (Data.type === 'kicked') {
+                        showForbidden({
+                            status: 403,
+                            error: "Kicked",
+                            message: "Kicked by admin",
+                            reason: Data.reason || undefined,
+                        }, { via: 'chat server', url: CHAT_WS });
+                        return;
+                    }
+
+                    if (Data.type === 'update_alert') {
+                        document.getElementById('updateModal').style.display = 'flex';
+                        return;
+                    }
+
+                    if (Data.type === 'message_deleted') {
+                        markDeleted(Data.id, Data.text);
+                        return;
+                    }
+
+                    if (Data.type === 'image_ban_change') {
+                        addSystemMessage(Data.banned ? 'You are no longer allowed to send images.' : 'You can send images again.', Data.banned ? '#ffcc55' : '#88dd88');
+                        return;
+                    }
+
+                    if (Data.type === 'error') {
+                        addSystemMessage(Data.message, '#ff7777');
+                        document.getElementById('roleError').textContent = Data.message || '';
+                        pendingRoleSave = false;
+                    }
+                } catch (err) {
+                    console.error('chat handler failed:', err);
+                }
+            };
+
+            chatSocket.onclose = event => {
+                debugPush('warn', event.reason ? 'disconnected: ' + event.reason : 'disconnected, code ' + event.code);
+                const closeHints = {
+                    1006: 'connection dropped. the server might be waking up, or the network is blocking it',
+                    4001: 'the server rejected the saved key',
+                    4003: 'the server refused this device, wrong network or banned',
+                    4008: 'too many tabs open with this account',
+                    4029: 'too many new accounts made from this network, wait a few minutes',
+                };
+                if (closeHints[event.code]) debugPush('info', closeHints[event.code]);
+                chatConnecting = false;
+                chatStatus.textContent = 'Disconnected';
+                chatInput.disabled = true;
+                chatSend.disabled = true;
+                chatImageBtn.disabled = true;
+                chatNameSave.disabled = true;
+                chatConnect.style.display = 'block';
+                chatSocket = null;
+                setOnlineCount(null);
+                scheduleChatRetry();
+            };
+
+            chatSocket.onerror = () => {
+                debugPush('error', 'connection error');
+                chatConnecting = false;
+                chatStatus.textContent = 'Connection failed';
+                if (chatSocket) chatSocket.close();
+                else {
+                    chatConnect.style.display = 'block';
+                    setOnlineCount(null);
+                    scheduleChatRetry();
+                }
+            };
+        } catch {
+            chatConnecting = false;
+            chatStatus.textContent = 'Connection failed';
+            chatConnect.style.display = 'block';
+            setOnlineCount(null);
+            scheduleChatRetry();
+        }
+    }
+
+    const approvalQueue = [];
+    const approvalModal = document.getElementById('approvalModal');
+
+    function showNextApproval() {
+        const item = approvalQueue[0];
+        if (!item) {
+            approvalModal.style.display = 'none';
+            return;
+        }
+        document.getElementById('approvalWho').textContent = item.username + ' wants to:';
+        document.getElementById('approvalDetail').textContent = item.action;
+        approvalModal.style.display = 'flex';
+    }
+
+    function answerApproval(accept) {
+        const item = approvalQueue.shift();
+        if (item && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'approval_response', id: item.id, accept: accept }));
+        }
+        showNextApproval();
+    }
+
+    document.getElementById('approvalAccept').addEventListener('click', () => answerApproval(true));
+    document.getElementById('approvalDeny').addEventListener('click', () => answerApproval(false));
+
+    document.getElementById('logoutAllRecoveryBtn').addEventListener('click', () => {
+        const error = document.getElementById('recoveryError');
+        const current = document.getElementById('recoveryCurrent').value;
+        error.classList.remove('ok');
+        if (!hasPasscode || !current) return error.textContent = 'Enter your current passcode.';
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return error.textContent = 'Not connected yet, try again in a second.';
+        if (!confirm('Log out every other device signed in to your account?')) return;
+        error.textContent = '';
+        chatSocket.send(JSON.stringify({ type: 'logout_account', current_passcode: current }));
+    });
+
+    function applyAccess(Data) {
+        myPerms = new Set(Array.isArray(Data.perms) ? Data.perms : []);
+        if (Data.permission_labels && typeof Data.permission_labels === 'object') permLabels = Data.permission_labels;
+        if (Array.isArray(Data.roles)) {
+            rolesList = Data.roles;
+            refreshRoleDisplays();
+            renderRolesList();
+        }
+        refreshDeleteButtons();
+        document.getElementById('clearChatBtn').style.display = can('clearchat') ? 'inline' : 'none';
+        document.getElementById('rolesBtn').style.display = isCreator ? 'inline' : 'none';
+        document.getElementById('analyticsBtn').style.display = can('stats') ? 'inline' : 'none';
+        chatOnlineCount.style.cursor = isStaff() ? 'pointer' : 'default';
+    }
+
+    function valuesFromTokens(entry, tokens) {
+        const list = tokens.slice();
+        const pos = entry.params.findIndex(p => p.kind === 'user');
+        if (pos !== -1 && pos < list.length) {
+            for (let take = Math.min(4, list.length - pos); take > 1; take--) {
+                const joined = list.slice(pos, pos + take).join(' ');
+                if (knownNames.has(joined.replace(/^@/, '').toLowerCase())) {
+                    list.splice(pos, take, joined.replace(/^@/, ''));
+                    break;
+                }
+            }
+        }
+        return entry.params.map((p, i) => (p.kind === 'rest' ? list.slice(i).join(' ') : (list[i] || '')));
+    }
+
+    function buildCommandText(entry, values) {
+        const lastFilled = values.reduce((last, value, i) => (value ? i : last), -1);
+        const tokens = [];
+        for (let i = 0; i <= lastFilled; i++) {
+            const value = values[i] || entry.params[i].blank;
+            if (!value) return { error: 'Fill in ' + entry.params[i].name + ' too.', index: i };
+            const plain = entry.params[i].kind === 'rest' || !/\s/.test(value);
+            tokens.push(plain ? value : '"' + value.replace(/"/g, '') + '"');
+        }
+        return { text: ['/' + entry.name, ...tokens].join(' ') };
+    }
+
+    function runTypedCommand(message) {
+        const parsed = message.match(/^\/([a-z]+)(?:\s+([\s\S]*))?$/i);
+        if (!parsed) return false;
+        const word = parsed[1].toLowerCase();
+        let entry = staffCommands.find(c => c.name === word);
+        if (!entry && parsed[2] === undefined) entry = staffCommands.find(c => c.name.startsWith(word));
+        if (!entry) return false;
+        const values = valuesFromTokens(entry, parseCommandText(parsed[2] || ''));
+        const missing = entry.params.findIndex((p, i) => p.required && !values[i]);
+        if (missing !== -1) {
+            openCommandForm(entry, values, missing);
+            return true;
+        }
+        const built = buildCommandText(entry, values);
+        if (built.error) {
+            openCommandForm(entry, values, built.index, built.error);
+            return true;
+        }
+        chatSocket.send(JSON.stringify({ type: 'command', text: built.text }));
+        return true;
+    }
+
+    const EMOJI = {"smile": "😄", "grin": "😁", "joy": "😂", "laughing": "😆", "rofl": "🤣", "wink": "😉", "blush": "😊", "heart_eyes": "😍", "kiss": "😘", "cool": "😎", "thinking": "🤔", "neutral": "😐", "unamused": "😒", "rolling_eyes": "🙄", "sweat": "😅", "cry": "😢", "sob": "😭", "angry": "😠", "rage": "😡", "scream": "😱", "sleepy": "😴", "sick": "🤢", "skull": "💀", "ghost": "👻", "clown": "🤡", "poop": "💩", "nerd": "🤓", "yum": "😋", "tongue": "😛", "zany": "🤪", "hug": "🤗", "shush": "🤫", "pensive": "😔", "worried": "😟", "flushed": "😳", "dizzy": "😵", "party": "🥳", "pleading": "🥺", "salute": "🫡", "melt": "🫠", "smirk": "😏", "innocent": "😇", "devil": "😈", "thumbsup": "👍", "thumbsdown": "👎", "clap": "👏", "wave": "👋", "ok_hand": "👌", "peace": "✌️", "fist": "✊", "punch": "👊", "pray": "🙏", "muscle": "💪", "point_up": "☝️", "point_left": "👈", "point_right": "👉", "raised_hands": "🙌", "handshake": "🤝", "crossed_fingers": "🤞", "eyes": "👀", "brain": "🧠", "heart": "❤️", "orange_heart": "🧡", "yellow_heart": "💛", "green_heart": "💚", "blue_heart": "💙", "purple_heart": "💜", "black_heart": "🖤", "broken_heart": "💔", "sparkling_heart": "💖", "fire": "🔥", "star": "⭐", "sparkles": "✨", "boom": "💥", "100": "💯", "zap": "⚡", "rainbow": "🌈", "sun": "☀️", "moon": "🌙", "snowflake": "❄️", "cloud": "☁️", "rain": "🌧️", "check": "✅", "x": "❌", "warning": "⚠️", "question": "❓", "exclamation": "❗", "no_entry": "⛔", "bell": "🔔", "lock": "🔒", "key": "🔑", "bulb": "💡", "gift": "🎁", "trophy": "🏆", "medal": "🏅", "crown": "👑", "gem": "💎", "money": "💰", "rocket": "🚀", "tada": "🎉", "confetti": "🎊", "balloon": "🎈", "game": "🎮", "joystick": "🕹️", "dice": "🎲", "target": "🎯", "soccer": "⚽", "basketball": "🏀", "football": "🏈", "baseball": "⚾", "tennis": "🎾", "music": "🎵", "headphones": "🎧", "guitar": "🎸", "camera": "📷", "tv": "📺", "computer": "💻", "phone": "📱", "dog": "🐶", "cat": "🐱", "mouse": "🐭", "rabbit": "🐰", "fox": "🦊", "bear": "🐻", "panda": "🐼", "lion": "🦁", "cow": "🐮", "pig": "🐷", "frog": "🐸", "monkey": "🐵", "chicken": "🐔", "penguin": "🐧", "unicorn": "🦄", "bee": "🐝", "butterfly": "🦋", "snake": "🐍", "dragon": "🐉", "shark": "🦈", "whale": "🐳", "octopus": "🐙", "pizza": "🍕", "burger": "🍔", "fries": "🍟", "hotdog": "🌭", "taco": "🌮", "sushi": "🍣", "cake": "🍰", "cookie": "🍪", "donut": "🍩", "icecream": "🍦", "candy": "🍬", "apple": "🍎", "banana": "🍌", "watermelon": "🍉", "strawberry": "🍓", "coffee": "☕", "beer": "🍺", "pizza_slice": "🍕"};
+    const emojiPicker = document.getElementById('emojiPicker');
+    let emojiMatches = [];
+    let emojiIndex = 0;
+
+    function replaceShortcodes(text) {
+        return text.replace(/:([a-z0-9_]+):/gi, (whole, name) => EMOJI[name.toLowerCase()] || whole);
+    }
+
+    function emojiQuery() {
+        const caret = chatInput.selectionStart === null ? chatInput.value.length : chatInput.selectionStart;
+        const match = chatInput.value.slice(0, caret).match(/(?:^|\s):([a-z0-9_]{2,})$/i);
+        return match ? match[1].toLowerCase() : null;
+    }
+
+    function closeEmojiPicker() {
+        emojiMatches = [];
+        emojiPicker.classList.remove('open');
+        emojiPicker.textContent = '';
+    }
+
+    function updateEmojiPicker() {
+        const query = emojiQuery();
+        if (query === null) return closeEmojiPicker();
+        const names = Object.keys(EMOJI);
+        emojiMatches = names.filter(n => n.startsWith(query)).concat(names.filter(n => !n.startsWith(query) && n.includes(query))).slice(0, 8);
+        if (!emojiMatches.length) return closeEmojiPicker();
+        emojiIndex = Math.min(emojiIndex, emojiMatches.length - 1);
+        emojiPicker.textContent = '';
+        emojiMatches.forEach((name, i) => {
+            const option = document.createElement('div');
+            option.className = 'mention-option' + (i === emojiIndex ? ' active' : '');
+            option.textContent = EMOJI[name] + '  :' + name + ':';
+            option.addEventListener('mousedown', event => {
+                event.preventDefault();
+                pickEmoji(i);
+            });
+            emojiPicker.appendChild(option);
+        });
+        emojiPicker.classList.add('open');
+    }
+
+    function pickEmoji(i) {
+        const name = emojiMatches[i];
+        if (!name) return closeEmojiPicker();
+        const caret = chatInput.selectionStart === null ? chatInput.value.length : chatInput.selectionStart;
+        const before = chatInput.value.slice(0, caret).replace(/:[a-z0-9_]{2,}$/i, EMOJI[name] + ' ');
+        chatInput.value = before + chatInput.value.slice(caret);
+        chatInput.setSelectionRange(before.length, before.length);
+        closeEmojiPicker();
+        chatInput.focus();
+    }
+
+    function sendChat() {
+        const message = chatInput.value.trim();
+        if (!chatName) {
+            setUsernameRequired(true);
+            chatNameInput.focus();
+            return;
+        }
+        if ((!message && !pendingImage) || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        if (isStaff() && !pendingImage && message.startsWith('/') && !message.startsWith('//')) {
+            if (!runTypedCommand(message)) chatSocket.send(JSON.stringify({ type: 'command', text: message }));
+        } else {
+            const text = replaceShortcodes(isStaff() && message.startsWith('//') ? message.slice(1) : message);
+            chatSocket.send(JSON.stringify({ type: 'message', message: text, image: pendingImage || undefined }));
+        }
+        chatInput.value = '';
+        setPendingImage(null);
+        closeMentionPicker();
+        closeCommandPicker();
+        closeEmojiPicker();
+    }
+
+    function commandQuery() {
+        if (!isStaff()) return null;
+        const match = chatInput.value.match(/^\/([a-z]*)$/i);
+        return match ? match[1].toLowerCase() : null;
+    }
+
+    function closeCommandPicker() {
+        commandMatches = [];
+        commandPicker.classList.remove('open');
+        commandPicker.textContent = '';
+    }
+
+    function updateCommandPicker() {
+        const query = commandQuery();
+        if (query === null) return closeCommandPicker();
+        commandMatches = staffCommands.filter(entry => entry.name.startsWith(query)).slice(0, 8);
+        if (!commandMatches.length) return closeCommandPicker();
+        commandIndex = Math.min(commandIndex, commandMatches.length - 1);
+        commandPicker.textContent = '';
+        commandMatches.forEach((entry, i) => {
+            const option = document.createElement('div');
+            option.className = 'mention-option' + (i === commandIndex ? ' active' : '');
+            option.textContent = entry.usage;
+            option.title = entry.desc;
+            option.addEventListener('mousedown', event => {
+                event.preventDefault();
+                pickCommand(i);
+            });
+            commandPicker.appendChild(option);
+        });
+        commandPicker.classList.add('open');
+    }
+
+    function pickCommand(i) {
+        const entry = commandMatches[i];
+        if (!entry) return closeCommandPicker();
+        openCommandForm(entry);
+    }
+
+    const commandForm = document.getElementById('commandForm');
+    let activeCommand = null;
+
+    function closeCommandForm() {
+        activeCommand = null;
+        commandForm.textContent = '';
+        commandForm.style.display = 'none';
+    }
+
+    function showPlayerSuggestions(field, box) {
+        const query = field.value.trim().toLowerCase().replace(/^@/, '');
+        const online = new Set(onlineMentions.map(p => p.user_id));
+        const pool = onlineMentions.map(p => ({ ...p, offline: false }));
+        knownNames.forEach(entry => {
+            if (!online.has(entry.user_id)) pool.push({ user_id: entry.user_id, username: entry.name, role: entry.role, offline: true });
+        });
+        const matches = pool
+            .filter(p => p.user_id !== chatUserId && (p.username.toLowerCase().includes(query) || String(p.user_id).startsWith(query)))
+            .sort((a, b) => a.offline - b.offline || a.username.localeCompare(b.username))
+            .slice(0, 8);
+        box.textContent = '';
+        matches.forEach(p => {
+            const option = document.createElement('div');
+            option.className = 'mention-option' + (p.role === 'creator' ? ' creator' : '');
+            option.textContent = '@' + p.username + (p.offline ? '  (offline, ' + p.user_id + ')' : '');
+            option.addEventListener('mousedown', event => {
+                event.preventDefault();
+                field.value = p.username;
+                box.classList.remove('open');
+            });
+            box.appendChild(option);
+        });
+        box.classList.toggle('open', matches.length > 0);
+    }
+
+    function refreshPlayerList() {
+        const field = commandForm.querySelector('[data-kind="user"]');
+        const box = commandForm.querySelector('.cmd-suggest');
+        if (field && box && document.activeElement === field) showPlayerSuggestions(field, box);
+    }
+
+    function parseCommandText(text) {
+        const tokens = [];
+        let i = 0;
+        while (i < text.length) {
+            const ch = text.charAt(i);
+            if (/\s/.test(ch)) {
+                i++;
+                continue;
+            }
+            if (ch === '"') {
+                const close = text.indexOf('"', i + 1);
+                const stop = close === -1 ? text.length : close;
+                tokens.push(text.slice(i + 1, stop));
+                i = stop + 1;
+                continue;
+            }
+            if (ch === '@') {
+                const key = nameAt(text, i + 1);
+                if (key) {
+                    tokens.push(text.substr(i + 1, key.length));
+                    i += key.length + 1;
+                    continue;
+                }
+            }
+            let j = i;
+            while (j < text.length && !/\s/.test(text.charAt(j))) j++;
+            tokens.push(text.slice(i, j));
+            i = j;
+        }
+        return tokens;
+    }
+
+    function updateCommandHint() {
+        const hint = document.getElementById('commandHint');
+        const match = isStaff() ? chatInput.value.match(/^\/([a-z]+)\s/i) : null;
+        const entry = match ? staffCommands.find(c => c.name === match[1].toLowerCase()) : null;
+        hint.textContent = '';
+        if (!entry) {
+            hint.style.display = 'none';
+            return;
+        }
+        const rest = chatInput.value.slice(match[0].length);
+        const typed = parseCommandText(rest);
+        const done = rest && !/\s$/.test(rest) ? typed.length - 1 : typed.length;
+        const active = Math.min(done, entry.params.length - 1);
+
+        const line = document.createElement('div');
+        line.className = 'hint-line';
+        const name = document.createElement('span');
+        name.className = 'hint-name';
+        name.textContent = '/' + entry.name;
+        line.appendChild(name);
+        entry.params.forEach((p, i) => {
+            const part = document.createElement('span');
+            part.className = 'hint-param' + (i === active ? ' on' : '');
+            part.textContent = ' ' + (p.required ? '{' + p.name + '}' : '[' + p.name + ']');
+            line.appendChild(part);
+        });
+        const note = document.createElement('div');
+        note.className = 'hint-note';
+        const current = entry.params[active];
+        let extra = entry.desc;
+        if (current && current.kind === 'user') extra = 'Type @ and pick a player, names with spaces work. ' + extra;
+        else if (current && current.hint) extra = current.hint + '. ' + extra;
+        note.textContent = extra;
+        hint.append(line, note);
+        hint.style.display = 'flex';
+    }
+
+    function openCommandForm(entry, values = [], problem = -1, message = '') {
+        closeCommandPicker();
+        closeCommandForm();
+        chatInput.value = '';
+        activeCommand = entry;
+
+        const head = document.createElement('div');
+        head.className = 'cmd-head';
+        const title = document.createElement('span');
+        title.textContent = '/' + entry.name;
+        const cancel = document.createElement('button');
+        cancel.textContent = 'x';
+        cancel.title = 'Cancel';
+        cancel.addEventListener('click', closeCommandForm);
+        head.append(title, cancel);
+
+        const desc = document.createElement('div');
+        desc.className = 'cmd-desc';
+        desc.textContent = entry.desc;
+        commandForm.append(head, desc);
+
+        entry.params.forEach((p, index) => {
+            const row = document.createElement('label');
+            row.className = 'cmd-field';
+            const caption = document.createElement('span');
+            caption.textContent = p.name + (p.required ? '' : ' (optional)') + (p.hint && p.kind !== 'user' ? ' - ' + p.hint : '');
+            let field;
+            if (p.kind === 'choice') {
+                field = document.createElement('select');
+                (p.choices || []).forEach(choice => {
+                    const option = document.createElement('option');
+                    option.value = choice;
+                    option.textContent = choice;
+                    field.appendChild(option);
+                });
+            } else {
+                field = document.createElement('input');
+                field.type = 'text';
+                field.maxLength = 200;
+                field.autocomplete = 'off';
+                field.placeholder = p.kind === 'user' ? 'name or user ID' : (p.blank || p.hint || '');
+            }
+            field.dataset.param = p.name;
+            field.dataset.kind = p.kind;
+            if (values[index]) field.value = values[index];
+            if (p.kind === 'user') {
+                const wrap = document.createElement('div');
+                wrap.className = 'cmd-wrap';
+                const box = document.createElement('div');
+                box.className = 'cmd-suggest';
+                field.addEventListener('input', () => showPlayerSuggestions(field, box));
+                field.addEventListener('focus', () => showPlayerSuggestions(field, box));
+                field.addEventListener('blur', () => {
+                    if (document.activeElement !== field) box.classList.remove('open');
+                });
+                wrap.append(field, box);
+                row.append(caption, wrap);
+            } else {
+                row.append(caption, field);
+            }
+            commandForm.appendChild(row);
+        });
+
+        const error = document.createElement('div');
+        error.className = 'cmd-error';
+        if (message) error.textContent = message;
+        else if (problem !== -1) error.textContent = entry.params[problem].kind === 'user' ? 'Choose a user.' : entry.params[problem].name + ' is required.';
+        const actions = document.createElement('div');
+        actions.className = 'cmd-actions';
+        const run = document.createElement('button');
+        run.className = 'control-btn';
+        run.textContent = 'Run';
+        run.addEventListener('click', submitCommandForm);
+        actions.appendChild(run);
+        commandForm.append(error, actions);
+
+        commandForm.style.display = 'flex';
+        askForMentionList(true);
+        refreshPlayerList();
+        const first = problem !== -1
+            ? commandForm.querySelector('[data-param="' + entry.params[problem].name + '"]')
+            : commandForm.querySelector('[data-param]');
+        (first || run).focus();
+    }
+
+    function submitCommandForm() {
+        if (!activeCommand || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const error = commandForm.querySelector('.cmd-error');
+        const params = activeCommand.params;
+        const fields = params.map(p => commandForm.querySelector('[data-param="' + p.name + '"]'));
+        const values = fields.map(field => field.value.trim());
+        const missing = params.findIndex((p, i) => p.required && !values[i]);
+        if (missing !== -1) {
+            error.textContent = params[missing].kind === 'user' ? 'Choose a user.' : params[missing].name + ' is required.';
+            fields[missing].focus();
+            return;
+        }
+        const built = buildCommandText(activeCommand, values);
+        if (built.error) {
+            error.textContent = built.error;
+            fields[built.index].focus();
+            return;
+        }
+        chatSocket.send(JSON.stringify({ type: 'command', text: built.text }));
+        closeCommandForm();
+        chatInput.focus();
+    }
+
+    commandForm.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeCommandForm();
+            chatInput.focus();
+        } else if (event.key === 'Enter' && event.target.tagName !== 'BUTTON') {
+            event.preventDefault();
+            submitCommandForm();
+        }
+    });
+
+    const MAX_IMAGE_SOURCE = 10 * 1024 * 1024;
+    const MAX_IMAGE_DATA = 120000;
+
+    function setPendingImage(dataUrl) {
+        pendingImage = dataUrl;
+        imagePreview.textContent = '';
+        if (!dataUrl) {
+            imagePreview.style.display = 'none';
+            return;
+        }
+        const thumb = document.createElement('img');
+        thumb.src = dataUrl;
+        const remove = document.createElement('button');
+        remove.textContent = 'x';
+        remove.title = 'Remove image';
+        remove.addEventListener('click', () => setPendingImage(null));
+        imagePreview.append(thumb, remove);
+        imagePreview.style.display = 'flex';
+    }
+
+    function shrinkImage(bitmap) {
+        let side = 640;
+        for (let attempt = 0; attempt < 6; attempt++) {
+            const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+            canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            const data = canvas.toDataURL('image/jpeg', attempt < 3 ? 0.7 : 0.55);
+            if (data.length <= MAX_IMAGE_DATA) return data;
+            side = Math.round(side * 0.75);
+        }
+        return null;
+    }
+
+    async function useImageFile(file) {
+        if (!file || !/^image\/(png|jpeg|gif|webp)$/.test(file.type)) {
+            addSystemMessage('Only PNG, JPEG, GIF and WebP images work.', '#ff7777');
+            return;
+        }
+        if (file.size > MAX_IMAGE_SOURCE) {
+            addSystemMessage('That image is over 10 MB.', '#ff7777');
+            return;
+        }
+        try {
+            const bitmap = await createImageBitmap(file);
+            const data = shrinkImage(bitmap);
+            bitmap.close();
+            if (!data) {
+                addSystemMessage("Couldn't shrink that image enough to send.", '#ff7777');
+                return;
+            }
+            setPendingImage(data);
+        } catch {
+            addSystemMessage("Couldn't read that image.", '#ff7777');
+        }
+    }
+
+    chatImageBtn.addEventListener('click', () => chatImageInput.click());
+    chatImageInput.addEventListener('change', () => {
+        useImageFile(chatImageInput.files[0]);
+        chatImageInput.value = '';
+    });
+    chatBox.addEventListener('paste', event => {
+        if (chatInput.disabled) return;
+        const items = event.clipboardData ? Array.from(event.clipboardData.items) : [];
+        const item = items.find(entry => entry.kind === 'file' && entry.type.startsWith('image/'));
+        if (!item) return;
+        event.preventDefault();
+        useImageFile(item.getAsFile());
+    });
+    chatBox.addEventListener('dragover', event => event.preventDefault());
+    chatBox.addEventListener('drop', event => {
+        event.preventDefault();
+        const file = event.dataTransfer && event.dataTransfer.files[0];
+        if (file && !chatInput.disabled) useImageFile(file);
+    });
+    document.getElementById('imageViewModal').addEventListener('click', () => {
+        document.getElementById('imageViewModal').style.display = 'none';
+    });
+    document.getElementById('updateLaterBtn').addEventListener('click', () => {
+        document.getElementById('updateModal').style.display = 'none';
+    });
+    document.getElementById('updateNowBtn').addEventListener('click', () => {
+        try {
+            sessionStorage.setItem('CG_ResumeGame', currentGame || '');
+        } catch {}
+        location.reload();
+    });
+
+    function saveChatName() {
+        const Name = chatNameInput.value.trim().slice(0, 24);
+        if (!Name || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        chatSocket.send(JSON.stringify({ type: 'set_name', name: Name }));
+    }
+
+    document.addEventListener('keydown', event => {
+        const Active = document.activeElement;
+        const Typing = Active && (Active.tagName === 'INPUT' || Active.tagName === 'TEXTAREA');
+        if (event.ctrlKey && event.key.toLowerCase() === 'c' && !event.repeat && !Typing) {
+            event.preventDefault();
+            openChat();
+        }
+    });
+
+    chatToggle.addEventListener('click', openChat);
+    chatClose.addEventListener('click', closeChat);
+    chatConnect.addEventListener('click', connectChat);
+    chatSend.addEventListener('click', sendChat);
+    chatNameSave.addEventListener('click', saveChatName);
+    chatPrivacy.addEventListener('change', () => {
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        chatSocket.send(JSON.stringify({ type: 'set_privacy', private: chatPrivacy.checked }));
+    });
+    chatNameInput.addEventListener('keydown', event => {
+        if (event.key === 'Enter') saveChatName();
+    });
+    chatInput.addEventListener('keydown', event => {
+        if (emojiPicker.classList.contains('open') && emojiMatches.length) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeEmojiPicker();
+                return;
+            }
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const step = event.key === 'ArrowDown' ? 1 : -1;
+                emojiIndex = (emojiIndex + step + emojiMatches.length) % emojiMatches.length;
+                updateEmojiPicker();
+                return;
+            }
+            if (event.key === 'Enter' || event.key === 'Tab') {
+                event.preventDefault();
+                pickEmoji(emojiIndex);
+                return;
+            }
+        }
+        if (commandPicker.classList.contains('open') && commandMatches.length) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeCommandPicker();
+                return;
+            }
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                const step = event.key === 'ArrowDown' ? 1 : -1;
+                commandIndex = (commandIndex + step + commandMatches.length) % commandMatches.length;
+                updateCommandPicker();
+                return;
+            }
+            const exact = commandMatches[commandIndex].name === commandQuery();
+            if (event.key === 'Tab' || (event.key === 'Enter' && !exact)) {
+                event.preventDefault();
+                pickCommand(commandIndex);
+                return;
+            }
+        }
+        if (mentionPicker.classList.contains('open')) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeMentionPicker();
+                return;
+            }
+            if (mentionMatches.length) {
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    const step = event.key === 'ArrowDown' ? 1 : -1;
+                    mentionIndex = (mentionIndex + step + mentionMatches.length) % mentionMatches.length;
+                    updateMentionPicker();
+                    return;
+                }
+                if (event.key === 'Enter' || event.key === 'Tab') {
+                    event.preventDefault();
+                    pickMention(mentionIndex);
+                    return;
+                }
+            }
+        }
+        if (event.key === 'Enter') sendChat();
+    });
+    chatInput.addEventListener('input', () => {
+        mentionIndex = 0;
+        commandIndex = 0;
+        updateMentionPicker();
+        updateCommandPicker();
+        updateCommandHint();
+        emojiIndex = 0;
+        updateEmojiPicker();
+        noteTyping();
+    });
+    chatInput.addEventListener('click', updateMentionPicker);
+    chatInput.addEventListener('blur', () => {
+        if (document.activeElement === chatInput) return;
+        closeEmojiPicker();
+        closeMentionPicker();
+        closeCommandPicker();
+    });
+    document.getElementById('mentionToast').addEventListener('click', () => {
+        hideMentionToast();
+        openChat();
+    });
+    document.getElementById('profileClose').addEventListener('click', () => {
+        profileModal.style.display = 'none';
+    });
+    profileModal.addEventListener('click', event => {
+        if (event.target === profileModal) profileModal.style.display = 'none';
+    });
+
+    document.getElementById('banDuration').addEventListener('change', function() {
+        const customRow = document.getElementById('customMinRow');
+        customRow.style.display = this.value === 'custom' ? 'flex' : 'none';
+    });
+
+    document.getElementById('banBtn').addEventListener('click', () => {
+        if (!profileViewId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+
+        const durationSelect = document.getElementById('banDuration');
+        let duration;
+        if (durationSelect.value === 'custom') {
+            duration = parseInt(document.getElementById('banCustomMinutes').value, 10) * parseInt(document.getElementById('banCustomUnit').value, 10);
+            if (!duration || duration < 1 || duration > 525600) {
+                alert('Enter a ban length between 1 minute and 1 year.');
+                return;
+            }
+        } else {
+            duration = parseInt(durationSelect.value, 10);
+        }
+
+        const reason = document.getElementById('banReason').value.trim();
+        const chatOnly = document.getElementById('banChatOnly').checked;
+
+        let durationLabel;
+        if (duration === 0) {
+            durationLabel = 'permanently';
+        } else if (duration < 60) {
+            durationLabel = `for ${duration} minute${duration === 1 ? '' : 's'}`;
+        } else if (duration < 1440) {
+            const h = Math.round(duration / 60);
+            durationLabel = `for ${h} hour${h === 1 ? '' : 's'}`;
+        } else {
+            const d = Math.round(duration / 1440);
+            durationLabel = `for ${d} day${d === 1 ? '' : 's'}`;
+        }
+
+        const banType = chatOnly ? 'chat ban' : 'ban';
+        const confirmed = confirm(`${banType.charAt(0).toUpperCase() + banType.slice(1)} user ${profileViewId} ${durationLabel}?${reason ? '\n\nReason: ' + reason : ''}`);
+        if (!confirmed) return;
+
+        chatSocket.send(JSON.stringify({
+            type: 'creator_ban',
+            user_id: profileViewId,
+            duration_minutes: duration,
+            reason: reason || null,
+            chat_only: chatOnly,
+        }));
+        profileModal.style.display = 'none';
+    });
+
+    function fillRoleSelect(selected) {
+        const select = document.getElementById('roleAssignSelect');
+        select.textContent = '';
+        select.add(new Option('No role', ''));
+        rolesList.forEach(role => select.add(new Option(role.name, String(role.id))));
+        select.value = selected === null || selected === undefined ? '' : String(selected);
+    }
+
+    function renderRolesList() {
+        const list = document.getElementById('rolesList');
+        list.textContent = '';
+        if (!rolesList.length) {
+            const empty = document.createElement('p');
+            empty.textContent = 'No roles yet. Make one below.';
+            list.appendChild(empty);
+            return;
+        }
+        rolesList.forEach(role => {
+            const item = document.createElement('div');
+            item.className = 'role-item';
+            const info = document.createElement('div');
+            const title = document.createElement('div');
+            title.className = 'role-item-name';
+            title.textContent = role.name;
+            title.style.color = role.color || '';
+            if (role.show === false) title.textContent = role.name + ' (hidden)';
+            if (role.auth) title.textContent += ' (auth)';
+            const perms = document.createElement('div');
+            perms.className = 'role-item-perms';
+            perms.textContent = role.perms.map(key => permLabels[key] || key).join(', ') || 'No permissions';
+            info.append(title, perms);
+            const actions = document.createElement('div');
+            actions.className = 'role-item-actions';
+            const edit = document.createElement('button');
+            edit.className = 'control-btn';
+            edit.textContent = 'Edit';
+            edit.addEventListener('click', () => fillRoleEditor(role));
+            const remove = document.createElement('button');
+            remove.className = 'control-btn';
+            remove.textContent = 'Delete';
+            remove.addEventListener('click', () => {
+                if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+                if (!confirm('Delete the ' + role.name + ' role? Everyone who has it loses it.')) return;
+                chatSocket.send(JSON.stringify({ type: 'role_delete', id: role.id }));
+            });
+            actions.append(edit, remove);
+            item.append(info, actions);
+            list.appendChild(item);
+        });
+    }
+
+    function fillRoleEditor(role) {
+        editingRoleId = role ? role.id : null;
+        document.getElementById('roleEditorTitle').textContent = role ? 'Editing ' + role.name : 'New role';
+        document.getElementById('roleNameInput').value = role ? role.name : '';
+        document.getElementById('roleColorInput').value = role && role.color ? role.color : '#4cc2e0';
+        document.getElementById('roleShowInput').checked = role ? role.show !== false : true;
+        document.getElementById('roleAuthInput').checked = Boolean(role && role.auth);
+        document.getElementById('roleError').textContent = '';
+        const checks = document.getElementById('rolePermChecks');
+        checks.textContent = '';
+        Object.keys(permLabels).forEach(key => {
+            const row = document.createElement('label');
+            row.className = 'role-perm-option';
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.value = key;
+            box.checked = Boolean(role && role.perms.includes(key));
+            row.append(box, document.createTextNode(permLabels[key]));
+            checks.appendChild(row);
+        });
+    }
+
+    document.getElementById('analyticsBtn').addEventListener('click', async () => {
+        const tab = window.open('about:blank', '_blank');
+        const key = playerKey || await getPlayerKey();
+        const url = CHAT_HTTP + '/analytics#' + encodeURIComponent(key);
+        if (tab) tab.location.href = url;
+        else window.location.href = url;
+    });
+    document.getElementById('rolesBtn').addEventListener('click', () => {
+        renderRolesList();
+        fillRoleEditor(null);
+        document.getElementById('rolesModal').style.display = 'flex';
+    });
+    document.getElementById('rolesClose').addEventListener('click', () => {
+        document.getElementById('rolesModal').style.display = 'none';
+    });
+    document.getElementById('openRolesFromProfile').addEventListener('click', () => {
+        renderRolesList();
+        fillRoleEditor(null);
+        document.getElementById('rolesModal').style.display = 'flex';
+    });
+    document.getElementById('roleNewBtn').addEventListener('click', () => fillRoleEditor(null));
+    document.getElementById('roleSaveBtn').addEventListener('click', () => {
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const perms = Array.from(document.querySelectorAll('#rolePermChecks input:checked')).map(box => box.value);
+        chatSocket.send(JSON.stringify({
+            type: 'role_save',
+            id: editingRoleId,
+            name: document.getElementById('roleNameInput').value.trim(),
+            color: document.getElementById('roleColorInput').value,
+            perms: perms,
+            show: document.getElementById('roleShowInput').checked,
+            auth: document.getElementById('roleAuthInput').checked,
+        }));
+        pendingRoleSave = true;
+    });
+    document.getElementById('roleAssignBtn').addEventListener('click', () => {
+        if (!profileViewId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const value = document.getElementById('roleAssignSelect').value;
+        chatSocket.send(JSON.stringify({ type: 'role_assign', user_id: profileViewId, role_id: value ? Number(value) : null }));
+    });
+
+    document.getElementById('unbanBtn').addEventListener('click', () => {
+        if (!profileViewId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const confirmed = confirm(`Unban user ${profileViewId}?`);
+        if (!confirmed) return;
+        chatSocket.send(JSON.stringify({ type: 'creator_unban', user_id: profileViewId }));
+        profileModal.style.display = 'none';
+    });
+
+    document.getElementById('resetNameBtn').addEventListener('click', () => {
+        if (!profileViewId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const confirmed = confirm(`Reset name for user ${profileViewId}? They will need to pick a new one.`);
+        if (!confirmed) return;
+        chatSocket.send(JSON.stringify({ type: 'reset_name', user_id: profileViewId }));
+        profileModal.style.display = 'none';
+    });
+
+    document.getElementById('adminSetNameBtn').addEventListener('click', () => {
+        if (!profileViewId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const name = document.getElementById('adminSetNameInput').value.trim();
+        if (!name) return;
+        chatSocket.send(JSON.stringify({ type: 'set_username_admin', user_id: profileViewId, username: name }));
+    });
+
+    document.getElementById('adminColorBtn').addEventListener('click', () => {
+        if (!profileViewId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const color = document.getElementById('adminColorInput').value;
+        chatSocket.send(JSON.stringify({ type: 'set_name_color', user_id: profileViewId, color: color }));
+    });
+
+    document.getElementById('adminColorClearBtn').addEventListener('click', () => {
+        if (!profileViewId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        chatSocket.send(JSON.stringify({ type: 'set_name_color', user_id: profileViewId, color: '' }));
+    });
+
+    document.querySelectorAll('#profileTabs .profile-tab').forEach(tab => {
+        tab.addEventListener('click', () => setProfileTab(tab.dataset.tab));
+    });
+
+    function startScreenshareView(userId, name) {
+        if (!userId || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        document.getElementById('screenshareViewTitle').textContent = name + "'s screen";
+        document.getElementById('screenshareViewStatus').textContent = 'Asking them now...';
+        document.getElementById('screenshareImg').removeAttribute('src');
+        document.getElementById('screenshareViewModal').style.display = 'flex';
+        chatSocket.send(JSON.stringify({ type: 'screenshare_request', user_id: userId }));
+    }
+
+    document.getElementById('viewScreenBtn').addEventListener('click', () => {
+        startScreenshareView(profileViewId, profileName.textContent || ('User ' + profileViewId));
+        profileModal.style.display = 'none';
+    });
+
+    let screenshareStream = null;
+    let screenshareInterval = null;
+
+    document.getElementById('screenshareAllow').addEventListener('click', async () => {
+        document.getElementById('screenshareAskModal').style.display = 'none';
+        stopScreenshareCapture();
+        try {
+            screenshareStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { displaySurface: 'browser' },
+                preferCurrentTab: true,
+                selfBrowserSurface: 'include'
+            });
+        } catch {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({ type: 'screenshare_response', accept: false }));
+            }
+            return;
+        }
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'screenshare_response', accept: true }));
+        }
+        const video = document.createElement('video');
+        video.srcObject = screenshareStream;
+        video.muted = true;
+        await video.play().catch(() => {});
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        screenshareStream.getVideoTracks()[0].addEventListener('ended', () => {
+            stopScreenshareCapture();
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({ type: 'screenshare_stop' }));
+            }
+        });
+
+        screenshareInterval = setInterval(() => {
+            if (!video.videoWidth) return;
+            if (chatSocket && chatSocket.bufferedAmount > 1500000) return;
+            const scale = Math.min(1, 800 / video.videoWidth);
+            canvas.width = video.videoWidth * scale;
+            canvas.height = video.videoHeight * scale;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frame = canvas.toDataURL('image/jpeg', 0.45);
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({ type: 'screenshare_frame', data: frame }));
+            }
+        }, 80);
+    });
+
+    document.getElementById('screenshareDeny').addEventListener('click', () => {
+        document.getElementById('screenshareAskModal').style.display = 'none';
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'screenshare_response', accept: false }));
+        }
+    });
+
+    function stopScreenshareCapture() {
+        if (screenshareInterval) {
+            clearInterval(screenshareInterval);
+            screenshareInterval = null;
+        }
+        if (screenshareStream) {
+            screenshareStream.getTracks().forEach(t => t.stop());
+            screenshareStream = null;
+        }
+    }
+
+    document.getElementById('screenshareViewClose').addEventListener('click', () => {
+        document.getElementById('screenshareViewModal').style.display = 'none';
+        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({ type: 'screenshare_stop' }));
+        }
+    });
+
+    document.getElementById('screenshareViewModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('screenshareViewModal')) {
+            document.getElementById('screenshareViewModal').style.display = 'none';
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({ type: 'screenshare_stop' }));
+            }
+        }
+    });
+
+    document.getElementById('shareBtn').addEventListener('click', () => {
+        document.getElementById('shareModal').style.display = 'flex';
+    });
+    document.getElementById('shareClose').addEventListener('click', () => {
+        document.getElementById('shareModal').style.display = 'none';
+    });
+    document.getElementById('shareModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('shareModal')) document.getElementById('shareModal').style.display = 'none';
+    });
+    document.getElementById('shareCopyBtn').addEventListener('click', () => {
+        const btn = document.getElementById('shareCopyBtn');
+        navigator.clipboard.writeText('notcaleb1.pythonanywhere.com/download').then(() => {
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        }).catch(() => {
+            document.getElementById('shareLinkInput').select();
+        });
+    });
+
+    document.getElementById('clearChatBtn').addEventListener('click', () => {
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        const confirmed = confirm('Clear all chat messages for everyone?');
+        if (!confirmed) return;
+        chatSocket.send(JSON.stringify({ type: 'clear_chat' }));
+    });
+
+    chatOnlineCount.addEventListener('click', () => {
+        if (!isStaff() || !chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+        chatSocket.send(JSON.stringify({ type: 'creator_online_list' }));
+    });
+
+    document.getElementById('playersModalClose').addEventListener('click', () => {
+        document.getElementById('playersModal').style.display = 'none';
+    });
+    document.getElementById('playersModal').addEventListener('click', e => {
+        if (e.target === document.getElementById('playersModal')) document.getElementById('playersModal').style.display = 'none';
+    });
+
+    document.getElementById('openRecoveryBtn').addEventListener('click', openRecovery);
+    document.getElementById('openLoginBtn').addEventListener('click', () => openLogin(false));
+    document.getElementById('recoverySaveBtn').addEventListener('click', saveRecovery);
+    document.getElementById('recoveryLaterBtn').addEventListener('click', () => {
+        localStorage.setItem('CG_PasscodeLater', '1');
+        document.getElementById('recoveryModal').style.display = 'none';
+    });
+    document.getElementById('recoveryPass').addEventListener('keydown', event => {
+        if (event.key === 'Enter') saveRecovery();
+    });
+    document.getElementById('loginSubmitBtn').addEventListener('click', submitLogin);
+    document.getElementById('loginNewBtn').addEventListener('click', skipLogin);
+    document.getElementById('loginCreateBtn').addEventListener('click', createAccount);
+    document.getElementById('accountBtn').addEventListener('click', () => openLogin(false));
+    document.getElementById('loginPass').addEventListener('keydown', event => {
+        if (event.key === 'Enter') submitLogin();
+    });
+
+    if (!hasSavedKey()) debugPush('info', 'no saved key on this browser');
+    connectChat();
+
+    viewer.addEventListener('load', () => {
+        if (viewer.getAttribute('src')) debugPush('info', 'game loaded');
+        LogOnGUI("Asset Loaded", "info");
+        try {
+            const iframeWin = viewer.contentWindow;
+            const levels = ['log', 'warn', 'error', 'info'];
+            levels.forEach(level => {
+                const original = iframeWin.console[level];
+                iframeWin.console[level] = function(...args) {
+                    const message = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
+                    LogOnGUI(message, level);
+                    if (original) original.apply(iframeWin.console, args);
+                };
+            });
+        } catch (e) {}
+
+        setTimeout(() => {
+            loadingOverlay.style.opacity = '0';
+            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+        }, DevMode ? 1500 : 300);
+    });
+
+    backBtn.addEventListener('click', () => {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        viewer.removeAttribute('src');
+        gameView.style.display = 'none';
+        homeView.style.display = 'flex';
+        devToggle.style.display = 'block';
+        sendGameUpdate(null);
+    });
+
+    fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            gameView.requestFullscreen().catch(() => {});
+            fullscreenBtn.textContent = "Exit Fullscreen";
+        } else {
+            document.exitFullscreen();
+            fullscreenBtn.textContent = "Fullscreen";
+        }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement) fullscreenBtn.textContent = "Fullscreen";
+    });
+
+    </script>
+</body>
+</html>
