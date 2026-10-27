@@ -1,6 +1,6 @@
-# Racing Thing (web)
+# Race (web)
 
-The whole game is one file, `index.html`: all 7 tracks, ghosts, medals, settings, sounds and
+The whole game is one file, `index.html`: all 13 tracks, ghosts, medals, settings, sounds and
 online races.
 
 - **On your own:** double-click `index.html`.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Racing Thing</title>
+<title>Race</title>
 <style>
 :root {
   --panel: rgba(18, 23, 41, 0.84);
@@ -69,14 +69,14 @@ input::placeholder { color: rgba(255, 255, 255, 0.35); font-style: italic; }
 .heading { position: absolute; font-size: 5.6em; font-weight: 800; }
 
 /* track select */
-.cards { position: absolute; left: 4em; top: 15em; display: grid; grid-template-columns: repeat(4, 27em); gap: 2.2em; }
-.tcard { position: relative; height: 23em; border-radius: 2em; background: rgba(18, 23, 41, 0.82); cursor: pointer; transition: transform 0.12s, background 0.1s; overflow: hidden; }
+.cards { position: absolute; left: 4em; top: 15em; display: grid; grid-template-columns: repeat(5, 22em); gap: 1.6em; }
+.tcard { position: relative; height: 18.5em; border-radius: 2em; background: rgba(18, 23, 41, 0.82); cursor: pointer; transition: transform 0.12s, background 0.1s; overflow: hidden; }
 .tcard:hover { background: rgba(51, 64, 97, 0.95); transform: scale(1.05); }
 .tcard.picked { background: rgba(41, 51, 82, 0.95); box-shadow: inset 0 0 0 0.3em var(--accent); }
 .tcard .band { position: absolute; left: 1.2em; right: 1.2em; top: 1.2em; height: 0.8em; border-radius: 0.4em; }
-.tcard .num { position: absolute; left: 0.3em; top: 0.45em; font-size: 6em; font-weight: 800; }
-.tcard .name { position: absolute; left: 0.85em; top: 4.25em; font-size: 2.4em; font-weight: 700; }
-.tcard .theme { position: absolute; left: 1.1em; top: 7.4em; font-size: 1.8em; color: var(--dim); }
+.tcard .num { position: absolute; left: 0.3em; top: 0.3em; font-size: 4.8em; font-weight: 800; }
+.tcard .name { position: absolute; left: 0.85em; right: 0.5em; top: 3.4em; font-size: 2.2em; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcard .theme { position: absolute; left: 1.1em; top: 6.1em; font-size: 1.8em; color: var(--dim); }
 .chip { display: inline-block; border-radius: 0.5em; color: #14141a; font-weight: 700; padding: 0.15em 0.6em; }
 .tcard .chip { position: absolute; left: 1em; bottom: 1em; font-size: 1.8em; }
 .tcard .time { position: absolute; right: 0.8em; bottom: 0.9em; font-size: 2.2em; font-weight: 700; }
@@ -218,7 +218,7 @@ input::placeholder { font-style: normal; text-transform: uppercase; letter-spaci
 .heading { font-weight: 900; }
 #logo { font-weight: 900; line-height: 0.9; text-shadow: 0.06em 0.06em 0 rgba(0, 0, 0, 0.55); }
 #logo b { display: block; color: var(--accent); }
-#byline { position: absolute; left: 2.75em; top: 12.9em; font-size: 2.6em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.75); }
+#byline { position: absolute; left: 2.75em; top: 8.7em; font-size: 2.6em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3em; color: rgba(255, 255, 255, 0.75); }
 .corner-note { color: rgba(255, 255, 255, 0.55); font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; font-size: 2em; }
 .tcard { background: rgba(14, 16, 26, 0.9); }
 .tcard:hover { transform: none; background: rgba(34, 38, 56, 0.95); }
@@ -404,7 +404,7 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// The 7 tracks, same text format as the Unity version (see README).
+// The tracks, same text format as the Unity version (see README).
 const TRACK_FILES = [
 [
 "01_meadow_run",
@@ -433,6 +433,30 @@ const TRACK_FILES = [
 [
 "07_island_chaos",
 "name: Island Chaos\ntheme: tropic\ndifficulty: 4\n\nstart\nforward 2\nright 1\nleft 1\nforward 1\nboost\nforward 1\nloop left\nforward 2\ncp\nright 2 up=2\nforward 2\nright 1\nforward 2\nramp\ngap 3 drop=1\nforward 5\nleft 1\ndown 1\ncp\nright 2\nforward 1\nboost\nforward 1\nloop\nforward 1\nright 1\nleft 1\nforward 1\nright 2\ncp\nboost\nup 1 steep\nforward 1\nramp\ngap 3 drop=2\nforward 6\nright 2\nforward 1\nfinish\n"
+],
+[
+"08_harbour_sprint",
+"name: Harbour Sprint\ntheme: coast\ndifficulty: 1\n\nstart\nforward 4\nboost\nforward 3\nright 3\nforward 2\nleft 3\ncp\nforward 3\nup 1\nforward 2\ndown 1\nright 3 bank\nforward 3\ncp\nboost\nforward 4\nleft 3\nforward 2\nfinish\n"
+],
+[
+"09_switchback_ridge",
+"name: Switchback Ridge\ntheme: forest\ndifficulty: 3\n\nstart\nforward 2\nup 2\nleft 2 bank\nforward 1\nright 2 bank up=1\nforward 2\ncp\nleft 3 bank\ndown 2\nforward 2\nboost\nforward 2\nramp\ngap 2 drop=1\nforward 4\ncp\nright 2\nleft 2\nright 3 bank\nforward 2\nfinish\n"
+],
+[
+"10_double_loop",
+"name: Double Loop\ntheme: lake\ndifficulty: 3\n\nstart\nforward 2\nboost\nforward 2\nloop\nforward 2\nboost\nforward 1\nloop left\nforward 2\ncp\nright 3\nforward 3\nright 3 up=1\nforward 2\ncp\ndown 1\nleft 3\nboost\nforward 3\nfinish\n"
+],
+[
+"11_dust_devil",
+"name: Dust Devil\ntheme: canyon\ndifficulty: 2\n\nstart\nforward 3\nleft 2\nright 2\nleft 2\nforward 2\ncp\nup 2\nforward 3\ndown 2\nright 3 bank\nforward 4\ncp\nboost\nforward 2\nramp\ngap 3 drop=1\nforward 4\nleft 3\nforward 2\nfinish\n"
+],
+[
+"12_golden_hour",
+"name: Golden Hour\ntheme: sunset\ndifficulty: 2\n\nstart\nforward 5\nboost\nforward 3\nright 4 bank\nforward 3\ncp\nleft 4 bank\nforward 3\nup 2\nforward 2\ncp\ndown 2\nright 3\nforward 2\nleft 3\nforward 2\nfinish\n"
+],
+[
+"13_island_hopper",
+"name: Island Hopper\ntheme: tropic\ndifficulty: 4\n\nstart\nforward 2\nboost\nforward 2\nramp\ngap 2 drop=1\nforward 3\nright 3 bank\ncp\nforward 2\nloop\nforward 2\nleft 3\nboost\nforward 2\nramp\ngap 3 drop=1\nforward 4\ncp\nright 2\nleft 2\nboost\nforward 3\nloop left\nforward 2\ncp\nright 3\nforward 2\nfinish\n"
 ]
 ];
 
@@ -2570,13 +2594,15 @@ class Car {
     const vf = v.dot(fwd), vs = v.dot(right);
     this.forwardSpeed = vf;
 
+    // braking into a corner at speed throws the car into a slide (as well as Space/Shift)
+    const brakeDrift = brake > 0.5 && vf > 14 && Math.abs(steer) > 0.3;
     let a = 0;
     if (throttle > 0.01) {
       if (vf < -1) a += S.braking * throttle;
       else { const x = clamp01(vf / TopSpeed); a += throttle * S.acceleration * (1 - x * x); }
     }
     if (brake > 0.01) {
-      if (vf > 1) a -= S.braking * brake;
+      if (vf > 1) a -= S.braking * brake * (brakeDrift ? 0.3 : 1);
       else if (vf > -S.reverseSpeed) a -= brake * S.acceleration * 0.6;
     }
     if (throttle < 0.01 && brake < 0.01) a -= Math.sign(vf) * Math.min(Math.abs(vf), 2.5);
@@ -2586,7 +2612,7 @@ class Car {
     this.accL.addScaledVector(fwd, a * contact);
 
     // sideways grip: the car can turn faster than the tyres follow at speed, which is where slides come from
-    this.drifting = drift && Math.abs(vf) > 12;
+    this.drifting = (drift && Math.abs(vf) > 12) || brakeDrift;
     const g = this.drifting ? S.driftGrip : S.grip;
     const cap = this.drifting ? S.maxCornering * 0.45 : S.maxCornering;
     this.accL.addScaledVector(right, clamp(-vs * g, -cap, cap) * contact);
@@ -4123,7 +4149,7 @@ const Menus = (() => {
     page = 'main';
     let medals = 0;
     for (const t of Tracks) medals += Records.medalFor(t, Records.best(t.id));
-    const title = 'Racing Thing', cut = title.lastIndexOf(' ');
+    const title = 'Race', cut = title.lastIndexOf(' ');
     const el = h(`<div class="page">
       <div class="shade-left"></div>
       <div id="logo">${title.slice(0, cut + 1)}<b>${title.slice(cut + 1)}</b></div>
@@ -4249,7 +4275,7 @@ const Menus = (() => {
   }
 
   function showControls() {
-    const rows = [['W / Up', 'Accelerate'], ['S / Down', 'Brake, reverse'], ['A D / Left Right', 'Steer'], ['Space / Shift', 'Drift'],
+    const rows = [['W / Up', 'Accelerate'], ['S / Down', 'Brake, reverse, drift'], ['Brake + steer', 'Drift at speed'], ['A D / Left Right', 'Steer'], ['Space / Shift', 'Drift'],
       ['Enter', 'Back to last checkpoint'], ['R', 'Restart (online: last checkpoint)'], ['H', 'Horn (online)'], ['C', 'Change camera'], ['Esc', 'Pause / menu'],
       ['Gamepad', 'Stick, triggers, B to drift']];
     const el = card('Controls', `<div class="keys-table">${rows.map(r => `<div class="k">${r[0]}</div><div class="a">${r[1]}</div>`).join('')}</div>
