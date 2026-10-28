@@ -518,12 +518,13 @@ function parseTrack(id, text) {
 // One sample per metre with a full frame (forward/right/up) at each. The road, scenery,
 // checkpoints, boost pads, respawns and the car's collisions all come from this.
 
-const Tile = 13, Level = 2.5, HalfWidth = 6, WallThickness = 0.5, WallHeight = 0.7, SlabDepth = 1.0, LoopRadius = 12;
+const Tile = 13, Level = 2.5, HalfWidth = 6, WallThickness = 0.5, WallHeight = 1.5, SlabDepth = 1.0, LoopRadius = 12;
 const RampRise = 0.3;
-// barriers stop the car this high up, though they're drawn lower
-const WallCollider = 5;
-// how fast grinding along a barrier bleeds speed (per second)
-const WallDrag = 3;
+// barriers stop the car exactly as high as they're drawn
+const WallCollider = WallHeight;
+// barriers "heat up" while you touch them and cool down after: one clip barely costs
+// anything, bouncing from wall to wall or grinding along one costs more and more
+const WallDrag = 0.4, WallHotDrag = 3.5, WallCool = 0.8;
 // jumps (the kicker ramp and the gap) keep their original size when the tracks got wider,
 // so they fly exactly like before
 const GapTile = 10;
@@ -2734,16 +2735,20 @@ class Car {
         }
       }
     }
+    this.wallHeat = Math.max(0, (this.wallHeat || 0) - WallCool * dt);
     if (!contacts.length) return;
 
     const S = CarSpec, ii = this.iinv, m = S.mass, up = this.up;
+    const speedBefore = this.vel.length();
+    const looping = cf && this.ground.path.inLoop(cf.i);
     let impact = 0, scraping = false, wallN = null, iterImpact = 0;
     for (let iter = 0; iter < 4; iter++) {
       for (const c of contacts) {
         let r = v3().subVectors(c.p, com);
-        // a barrier pushes at the height of the car's middle, so hitting one turns the car
-        // but never rolls or flips it
-        if (c.wall) r.addScaledVector(up, -r.dot(up));
+        // a barrier pushes straight through the car's middle: it stops you going into it but
+        // never spins, rolls or steers the car. Getting off it is up to you. Except in loops,
+        // where it guides you across to the way out (you can't steer upside down)
+        if (c.wall) { if (looping) r.addScaledVector(up, -r.dot(up)).multiplyScalar(0.6); else r.set(0, 0, 0); }
         const vp = v3().crossVectors(this.angVel, r).add(this.vel);
         const vn = vp.dot(c.n);
         if (vn >= 0) continue;
@@ -2774,20 +2779,27 @@ class Car {
       // bleeds speed fast, so bouncing round corners is always slower than steering
       // except in loops, where the road leans you across to the way out and the barrier
       // is part of the ride
-      const looping = cf && this.ground.path.inLoop(cf.i);
+      // a glancing touch costs a little, a square hit costs a lot
+      const heat = this.wallHeat || 0;
       if (iterImpact > 0 && !looping) {
-        const keep = Math.max(0.3, 1 - iterImpact * 0.032);
+        const angle = clamp01(iterImpact / Math.max(1, speedBefore));
+        const keep = Math.max(0.3, 1 - 0.5 * angle * angle * (1 + 5 * heat));
+        this.wallHeat = heat + angle;
         const vUp = this.vel.dot(up);
         this.vel.addScaledVector(up, -vUp).multiplyScalar(keep).addScaledVector(up, vUp);
       }
       const vUp = this.vel.dot(up);
-      if (!looping) this.vel.addScaledVector(up, -vUp).multiplyScalar(Math.max(0, 1 - WallDrag * dt)).addScaledVector(up, vUp);
-      // only when nearly stopped with the nose in a barrier: swing round so it can't get stuck
+      this.wallHeat += 1.5 * dt;
+      // the extra drag is for driving into it; running along it parallel costs little
+      const nose = clamp01(-this.forward.dot(wallN) * 4);
+      const drag = WallDrag + WallHotDrag * clamp01(heat / 0.6) * nose;
+      if (!looping) this.vel.addScaledVector(up, -vUp).multiplyScalar(Math.max(0, 1 - drag * dt)).addScaledVector(up, vUp);
+      // only when slow with the nose in a barrier: swing round so it can't get stuck
       const fwd = this.forward, into = -fwd.dot(wallN);
       if (into > 0.05 && this.speed < 8) {
         const along = fwd.clone().addScaledVector(wallN, into).normalize();
         const yaw = v3().crossVectors(fwd, along).dot(up);
-        const rate = clamp(yaw * 9, -4, 4);
+        const rate = clamp(yaw * 10, -5, 5);
         this.angVel.addScaledVector(up, rate - this.angVel.dot(up) * 0.5);
       }
     }
